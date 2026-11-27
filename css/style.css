@@ -1354,3 +1354,58 @@ a.card.fest-card:hover{border-color:var(--berry);filter:brightness(1.03)}
 .vlist .vb-head .ico.hd{width:48px;height:48px}
 .iconbtn.vreset{height:38px;flex:none;white-space:nowrap}
 .iconbtn.vreset:disabled{opacity:.45;cursor:default}
+/* No sideways scrolling anywhere: the Notes column is gone, and when the table's box is narrow (under 760px,
+   e.g. a small window with the side panels) it uses the same trimmed columns as phones */
+.tablewrap:has(table.crops),.tablewrap:has(table.fishes){overflow:visible!important}
+.tablewrap table.crops,.tablewrap table.fishes{min-width:0!important}
+.tablewrap table.crops tr :is(td,th):nth-child(10){display:none!important}
+.tablewrap table.crops tr th,.tablewrap table.fishes tr th{white-space:normal}
+@container (max-width:760px){
+  .tablewrap:has(table.crops),.tablewrap:has(table.fishes){overflow-x:auto}
+  .tablewrap table.crops,.tablewrap table.fishes{min-width:0!important;border-radius:10px}
+  .tablewrap table.crops tr th,.tablewrap table.fishes tr th{padding:6px 5px;font-size:11px;white-space:normal;line-height:1.15}
+  .tablewrap table.crops tr td,.tablewrap table.fishes tr td{padding:6px 5px;font-size:12.5px;line-height:1.25}
+  .tablewrap table.crops tr :is(td,th):is(:nth-child(2),:nth-child(5),:nth-child(6),:nth-child(7),:nth-child(10)){display:none!important}
+  .tablewrap table.fishes tr :is(td,th):is(:nth-child(4),:nth-child(8)){display:none!important}
+  .tablewrap table.crops a.wiki,.tablewrap table.fishes a.wiki{display:none!important}
+  .tablewrap table.crops .crop-cell{gap:6px}
+  .tablewrap table.crops .crop-cell .ico,.tablewrap table.fishes td:nth-child(2) .ico{width:22px;height:22px}
+  .tablewrap table.crops tr td:nth-child(1) b.item,.tablewrap table.fishes tr td:nth-child(2) b.item{font-size:13px}
+  .tablewrap table.crops .crop-seed{font-size:11px;opacity:.8}
+  .tablewrap table.fishes tr td:nth-child(2){white-space:normal}
+  .tablewrap table.crops tr td:nth-child(9) b{font-size:13px}
+}
+@container (max-width:760px){
+  /* fish on phones: weather is just the rain/sun icon (blank when any weather), smaller fish icons beside the name */
+  .tablewrap table.fishes .wtxt{display:none}
+  .tablewrap table.fishes tr td:nth-child(6){text-align:center;width:1%}
+  .tablewrap table.fishes tr th:nth-child(6){font-size:0}
+  .tablewrap table.fishes tr th:nth-child(6)::after{content:"☂";font-size:13px}
+  .tablewrap table.fishes tr td:nth-child(2) .ico{width:18px;height:18px;vertical-align:middle;margin-right:3px}
+  .tablewrap table.fishes tr td:nth-child(7){white-space:nowrap}
+  .tablewrap table.fishes tr :is(td,th){padding-left:4px;padding-right:4px}
+}
+/* Date box: weather (today + small tomorrow, no box of their own) | date | year, all in one box, on every screen */
+.datebox{display:inline-flex;align-items:stretch;height:40px;box-sizing:border-box;background:var(--panel);border:2px solid var(--line);border-radius:8px;
+  box-shadow:0 2px 0 rgba(40,20,5,.35);min-width:0}
+header .today .datebox .iconbtn,header .today .datebox .yearbox,header .today .datebox .wx:not([hidden]){height:100%;border:0;border-radius:0;background:none;box-shadow:none}
+header .today .datebox .wx:not([hidden]){width:auto;padding:0 6px;display:inline-flex;align-items:center;justify-content:center;gap:3px}
+header .today .datebox #wxBox .wx-next{display:inline-flex}
+header .today .datebox .wx .wx-i{width:28px}
+header .today .datebox .wx .wx-next .wx-i{width:17px}
+header .today .datebox .wx .wx-next{display:inline-flex;align-items:center}
+header .today .datebox .wx img{display:block}
+header .today .datebox .wx:not([hidden])+.datewrap{border-left:1px solid var(--line)}
+header .today .datebox .yearbox{border-left:1px solid var(--line)}
+header .today .datebox .datewrap{display:flex}
+header .today .datebox #dateBtn{height:100%}
+/* phones: the box fills the row */
+@media (max-width:760px){
+  header .today .datebox{order:7;flex:1 1 100%}
+  header .today .datebox .datewrap{flex:1 1 0;min-width:0}
+  header .today .datebox #dateBtn{width:100%;justify-content:center}
+}
+/* days after the game's date can't be picked */
+.mc-day.future{opacity:.35;cursor:not-allowed;filter:grayscale(.6)}
+.sv-day .n.future{opacity:.4;cursor:default}
+.yearbox button:disabled{opacity:.35;cursor:default}

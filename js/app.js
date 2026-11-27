@@ -259,7 +259,7 @@ function renderCalendar(){
     const f=FESTIVALS.find(x=>x.s===s&&x.days.includes(d)&&unlocked(x));
     const tip=[b?`${b.n}'s Birthday`:"",f?f.n:""].filter(Boolean).join(" · ");
     cells+=`<div class="sv-day ${s===st.season&&d===st.day?"now":""} ${b?"has-b":""}" ${tip?`data-tip="${esc(tip)}"`:""}>
-      <div class="n" data-pick="${s}|${d}" title="Set today to ${cap(s)} ${d}">${d}</div>
+      ${isFuture(s,d)?`<div class="n future" title="${cap(s)} ${d} is after your game's date">${d}</div>`:`<div class="n" data-pick="${s}|${d}" title="Set today to ${cap(s)} ${d}">${d}</div>`}
       ${f?`<div class="flag" data-fest="${esc(f.n)}"><i>${IC.fest(f.n)}</i><span>${esc(f.n)}</span></div>`:""}
       ${b?`<div class="por" data-villager="${esc(b.n)}">${img(b.n,"",true)}</div>`:""}
     </div>`;
@@ -693,7 +693,7 @@ function renderFestivals(){
   return `<h1>Festivals & Events</h1><p class="sub">The shops close on festival days, and most festivals start when you arrive at the location.</p>
   <div class="grid g3 fest-grid">${FESTIVALS.map(f=>{let dd=dayDiff(st.season,st.day,f.s,f.days[0]);if(dd<-(f.days.length-1))dd+=112;return `
     <a class="card fest-card" id="fest-${esc(f.n.replace(/W/g,""))}" href="${wikiURL(f.n)}" target="_blank" rel="noopener" title="Open ${esc(f.n)} on the Stardew Valley Wiki">
-      <div class="fest-top"><span class="pill ${f.s} fest-date">${SICON[f.s]}<b>${f.days.join(", ")}</b></span>${!unlocked(f)?pill(lockReason(f)):dd<=0&&dd>-(f.days.length)?pill("Today!","love"):dd<=7?pill("in "+dd+"d","ok"):""}</div>
+      <div class="fest-top"><span class="pill ${f.s} fest-date">${img(FEST_ICON[f.n]||"StatusFestival","si")}<b>${f.days.join(", ")}</b></span>${!unlocked(f)?pill(lockReason(f)):dd<=0&&dd>-(f.days.length)?pill("Today!","love"):dd<=7?pill("in "+dd+"d","ok"):""}</div>
       <h2 class="fest-name">${esc(f.n)}</h2>
       <div class="fest-line">${IC.place()}<span>${esc(f.where)}</span></div>
       <div class="fest-line">${IC.time()}<span>${esc(f.t)}</span></div>
@@ -819,9 +819,9 @@ document.addEventListener("click",e=>{
   if(e.target.closest("#dateBtn")){toggleDatePop();return;}
   // next day: Winter 28 rolls over to Spring 1 of the next year
   const yb=e.target.closest("[data-yr]");
-  if(yb){st.year=Math.max(1,(st.year||1)+ +yb.dataset.yr);save();syncHeader();const y=scrollY;render();scrollTo(0,y);return;}
+  if(yb){const m=dateMax();st.year=Math.max(1,(st.year||1)+ +yb.dataset.yr);if(m&&st.year>=m.year){st.year=m.year;if(isFuture(st.season,st.day)){st.season=m.season;st.day=m.day;}}save();syncHeader();const y=scrollY;render();scrollTo(0,y);return;}
   const pk=e.target.closest("[data-pick]");
-  if(pk){const [s,d]=pk.dataset.pick.split("|");toggleDatePop(false);setDate(s,+d);return;}
+  if(pk){const [s,d]=pk.dataset.pick.split("|");if(isFuture(s,+d))return;toggleDatePop(false);setDate(s,+d);return;}
   const pcs=e.target.closest("[data-pcs]");
   if(pcs){ui.pickSeason=pcs.dataset.pcs;if($("datePop").classList.contains("open"))$("datePop").innerHTML=miniCal();return;}
   if(!e.target.closest("#datePop"))toggleDatePop(false);
@@ -1000,17 +1000,25 @@ const wxName=id=>(WEATHER[id]||[0,id||"?"])[1];
 function liveWeather(){const s=typeof live!=="undefined"&&live.snap;if(!s||!s.weather||!st.farmCode)return null;
   const d=s.date;return d.season===st.season&&d.day===st.day&&d.year===st.year?s.weather:null;}
 function syncWeather(){const b=$("wxBox"),t=$("wxNext"),w=liveWeather();if(!b)return;b.hidden=!w;if(t)t.hidden=!w;if(!w)return;
-  const nxt=SEASONS[(SEASONS.indexOf(st.season)+(st.day===28?1:0))%4];
-  b.innerHTML=img(wxIcon(w.today,st.season),"wx-i");
-  b.title=`Weather today: ${wxName(w.today)} · Tomorrow (TV forecast): ${wxName(w.tomorrow)}`;
-  b.innerHTML+=`<span class="wx-next">${img(wxIcon(w.tomorrow,nxt),"wx-i")}</span>`;
+  const nxt=SEASONS[(SEASONS.indexOf(st.season)+(st.day===28?1:0))%4], nd=st.day===28?1:st.day+1;
+  // a festival day shows that festival's own icon instead of the weather
+  const fOn=(s,d)=>FESTIVALS.find(x=>x.s===s&&x.days.includes(d)&&unlocked(x));
+  const fT=fOn(st.season,st.day), fN=fOn(nxt,nd);
+  const ico=(f,id,s)=>f?(FEST_ICON[f.n]||"StatusFestival"):wxIcon(id,s), nm=(f,id)=>f?f.n:wxName(id);
+  b.innerHTML=img(ico(fT,w.today,st.season),"wx-i");
+  b.title=`Today: ${nm(fT,w.today)} · Tomorrow${fN?"":" (TV forecast)"}: ${nm(fN,w.tomorrow)}`;
+  b.innerHTML+=`<span class="wx-next">${img(ico(fN,w.tomorrow,nxt),"wx-i")}</span>`;
   // phones show tomorrow in its own box at the end of the date row
   if(t){t.innerHTML=img(wxIcon(w.tomorrow,nxt),"wx-i");t.title=`Tomorrow (TV forecast): ${wxName(w.tomorrow)}`;}}
 function syncHeader(){syncWeather();$("dateBtn").innerHTML=`${SICON[st.season]}<span>${cap(st.season)} ${st.day}</span><i>▾</i>`;$("dateBtn").title="Today in your game: "+cap(st.season)+" "+st.day+". Click to change";
-  $("yearBox").innerHTML=`<span title="Year in your game">Year ${st.year}</span><div class="yr-btns"><button type="button" data-yr="1" title="Next year" aria-label="Next year">+</button><button type="button" data-yr="-1" ${st.year<=1?"disabled":""} title="Previous year" aria-label="Previous year">−</button></div>`;if($("datePop").classList.contains("open"))$("datePop").innerHTML=miniCal();applyTheme();applyBg();}
+  $("yearBox").innerHTML=`<span title="Year in your game">Year ${st.year}</span><div class="yr-btns"><button type="button" data-yr="1" ${dateMax()&&st.year>=dateMax().year?"disabled":""} title="Next year" aria-label="Next year">+</button><button type="button" data-yr="-1" ${st.year<=1?"disabled":""} title="Previous year" aria-label="Previous year">−</button></div>`;if($("datePop").classList.contains("open"))$("datePop").innerHTML=miniCal();applyTheme();applyBg();}
 
 /* ---- Date picker: a small in-game style calendar (header pop-up + Home page) ---- */
 /* view: true = the Home page's read-only copy (this season only, days can't be clicked) */
+// With a farm connected you can look back at earlier days, but not ahead of the game's own date
+const dateNum=(y,s,d)=>(y-1)*112+SEASONS.indexOf(s)*28+d;
+const dateMax=()=>(typeof live!=="undefined"&&st.farmCode&&live.snap)?live.snap.date:null;
+const isFuture=(s,d,y=st.year)=>{const m=dateMax();return !!m&&dateNum(y,s,d)>dateNum(m.year,m.season,m.day);};
 function miniCal(view){
   const s=view?st.season:ui.pickSeason||st.season;
   let cells="";
@@ -1018,7 +1026,7 @@ function miniCal(view){
     const b=VILLAGERS.find(v=>v.s===s&&v.d===d&&unlocked(v)), f=FESTIVALS.find(x=>x.s===s&&x.days.includes(d)&&unlocked(x));
     const tip=[b?b.n+"'s birthday":"",f?f.n:""].filter(Boolean).join(" · ");
     const inner=`<b>${d}</b>${b?img(b.n,"mc"):""}${f?`<i class="mc-flag">${IC.fest(f.n)}</i>`:""}`, cls=`mc-day ${s===st.season&&d===st.day?"on":""} ${f?"fest":""}`, title=`${cap(s)} ${d}${tip?" · "+esc(tip):""}`;
-    cells+=view?`<div class="${cls}" title="${title}">${inner}</div>`:`<button type="button" class="${cls}" data-pick="${s}|${d}" title="${title}">${inner}</button>`;
+    cells+=view?`<div class="${cls}" title="${title}">${inner}</div>`:isFuture(s,d)?`<button type="button" class="${cls} future" disabled title="${title} · after your game's date">${inner}</button>`:`<button type="button" class="${cls}" data-pick="${s}|${d}" title="${title}">${inner}</button>`;
   }
   if(view)return `<div class="mini-cal ro"><div class="mc-title">${SICON[s]} ${cap(s)}, Year ${st.year}</div>
     <div class="mc-grid">${["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].map(w=>`<span class="mc-dow">${w}</span>`).join("")}${cells}</div></div>`;
