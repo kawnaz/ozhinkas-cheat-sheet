@@ -103,7 +103,8 @@ document.addEventListener("visibilitychange",()=>{if(!document.hidden)liveLoad()
 // Every 15 seconds while the page is on screen, ask the server only "when was the last upload?".
 // If the mod has sent a new night since, load the full farm data and redraw.
 async function liveStamp(){
-  if(document.hidden||!st.farmCode||live.loading||!live.snap)return;
+  if(document.hidden||!st.farmCode||live.loading)return;
+  if(!live.snap)return liveLoad(); // first load failed (e.g. offline): try again
   try{
     const r=await fetch(LIVE_API+st.farmCode+"/stamp",{cache:"no-store"});if(!r.ok)return;
     const j=await r.json();if(j.updatedAt&&j.updatedAt!==live.updatedAt)liveLoad();
