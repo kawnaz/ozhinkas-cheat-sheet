@@ -953,7 +953,20 @@ function bgMenu(){const cur=st.bg||"paper";return `<div class="bg-list">${BGS.ma
   ${f?`<span class="bg-sw bg-ico" style="background-image:${tileURL(f+" Icon")}"></span>`:`<span class="bg-sw paper"></span>`}<span>${esc(l)}</span></button>`).join("")}</div>`;}
 function toggleBgPop(open){const p=$("bgPop");const was=p.classList.contains("open");if(open===false&&!was)return;open=open??!was;if(open)p.innerHTML=bgMenu();p.classList.toggle("open",open);$("bgBtn").setAttribute("aria-expanded",open);}
 function applyTheme(){if(st.theme)document.documentElement.dataset.theme=st.theme;}
-function syncHeader(){$("dateBtn").innerHTML=`${SICON[st.season]}<span>${cap(st.season)} ${st.day}</span><i>▾</i>`;$("dateBtn").title="Today in your game: "+cap(st.season)+" "+st.day+". Click to change";
+/* Weather from the connected farm (sent by the mod each night; it stays the same all day in the game) */
+const WEATHER={Sun:["StatusSun","Sunny"],Rain:["StatusRain","Rain"],Storm:["StatusStorm","Storm"],Snow:["StatusSnow","Snow"],
+  Wind:[null,"Windy"],GreenRain:["StatusGreenRain","Green rain"],Festival:["StatusFestival","Festival"],Wedding:["StatusWedding","Wedding"]};
+const wxIcon=(id,season)=>{const w=WEATHER[id]||WEATHER.Sun;return w[0]||(season==="fall"?"StatusWindFall":"StatusWindSpring");};
+const wxName=id=>(WEATHER[id]||[0,id||"?"])[1];
+// today's weather, only while the dashboard shows the same day as the uploaded farm
+function liveWeather(){const s=typeof live!=="undefined"&&live.snap;if(!s||!s.weather||!st.farmCode)return null;
+  const d=s.date;return d.season===st.season&&d.day===st.day&&d.year===st.year?s.weather:null;}
+function syncWeather(){const b=$("wxBox"),w=liveWeather();if(!b)return;b.hidden=!w;if(!w)return;
+  const nxt=SEASONS[(SEASONS.indexOf(st.season)+(st.day===28?1:0))%4];
+  b.innerHTML=img(wxIcon(w.today,st.season),"wx-i");
+  b.title=`Weather today: ${wxName(w.today)} · Tomorrow (TV forecast): ${wxName(w.tomorrow)}`;
+  b.innerHTML+=`<span class="wx-next">${img(wxIcon(w.tomorrow,nxt),"wx-i")}</span>`;}
+function syncHeader(){syncWeather();$("dateBtn").innerHTML=`${SICON[st.season]}<span>${cap(st.season)} ${st.day}</span><i>▾</i>`;$("dateBtn").title="Today in your game: "+cap(st.season)+" "+st.day+". Click to change";
   $("yearBox").innerHTML=`<span title="Year in your game">Year ${st.year}</span><div class="yr-btns"><button type="button" data-yr="1" title="Next year" aria-label="Next year">+</button><button type="button" data-yr="-1" ${st.year<=1?"disabled":""} title="Previous year" aria-label="Previous year">−</button></div>`;if($("datePop").classList.contains("open"))$("datePop").innerHTML=miniCal();applyTheme();applyBg();}
 
 /* ---- Date picker: a small in-game style calendar (header pop-up + Home page) ---- */

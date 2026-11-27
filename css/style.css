@@ -749,3 +749,9 @@ html.w1900{
 .heart-tag .ico{width:14px;height:14px}
 .heart-tag.zero{color:#9c7b5c}
 h2 .heart-tag{margin-left:8px;vertical-align:middle}
+
+/* weather from the game, next to the date: today's icon big, tomorrow's forecast small */
+.wx{display:inline-flex;align-items:flex-end;gap:1px;height:38px;padding:0 2px;cursor:help}
+.wx[hidden]{display:none}
+.wx .wx-i{width:36px;height:auto;image-rendering:pixelated}
+.wx .wx-next .wx-i{width:21px;opacity:.75}
