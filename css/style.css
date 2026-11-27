@@ -1032,3 +1032,73 @@ header::after{height:32px;background:var(--grass,linear-gradient(#3d8c3c,#3d8c3c
   .tablewrap table.crops td .muted{font-weight:400}
 }
 .vp-side .vp-facts:last-child{margin-bottom:0}
+/* Crops on every screen: the crop cards, 1 per row on phones, 2-3 per row on computers.
+   The column headers become a row of sort buttons above the cards. */
+.tablewrap:has(table.crops){background:none;border:0;box-shadow:none;border-radius:0}
+.tablewrap table.crops,.tablewrap table.crops tbody{display:block;width:100%}
+.tablewrap table.crops tbody{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+.tablewrap table.crops tr:first-child{display:flex!important;flex-wrap:wrap;align-items:center;gap:6px;grid-column:1/-1;padding:0;border:0;background:none}
+.tablewrap table.crops tr:first-child::before{content:"Sort by:";font-size:13px;font-weight:700;color:var(--muted);margin-right:2px}
+.tablewrap table.crops th{position:static;display:inline-flex;padding:3px 10px;border:1px solid var(--line);border-radius:14px;background:var(--panel);font-size:13px}
+.tablewrap table.crops th:not([data-csort]){display:none}
+.tablewrap table.crops th[data-csort]:hover{border-color:var(--berry)}
+.tablewrap table.crops th:is([data-csort]):not(:empty){text-align:center}
+.tablewrap table.crops tr:not(:first-child){display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;padding:10px 12px;align-content:start;
+  background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);width:auto}
+.tablewrap table.crops td{display:flex;flex-wrap:wrap;justify-content:center;align-items:baseline;gap:0 4px;text-align:center;padding:4px 2px;width:auto;
+  background:rgba(255,255,255,.4);border:1px solid rgba(201,138,74,.35);border-radius:8px;font-weight:700;min-width:0!important}
+.tablewrap table.crops td::before{content:attr(data-l);flex-basis:100%;font-size:11px;font-weight:700;color:var(--muted);text-align:center;margin-bottom:1px}
+.tablewrap table.crops td:nth-child(1){order:1;grid-column:1/3;justify-content:flex-start;align-items:center;background:none;border:0;text-align:left;font-weight:400}
+.tablewrap table.crops td:nth-child(2){order:2;justify-content:flex-end;align-items:center;background:none;border:0}
+.tablewrap table.crops td:nth-child(1)::before,.tablewrap table.crops td:nth-child(2)::before,.tablewrap table.crops td:nth-child(10)::before{display:none}
+.tablewrap table.crops td:nth-child(9){order:3;grid-column:1/-1;flex-wrap:nowrap;justify-content:space-between;align-items:center;padding:5px 10px;
+  background:#fbe3b0;border-color:#c98a4a;font-size:16px}
+.tablewrap table.crops td:nth-child(9)::before{flex-basis:auto;font-size:13px;margin:0;color:#7a4a22}
+.tablewrap table.crops td:nth-child(3){order:4}.tablewrap table.crops td:nth-child(4){order:5}.tablewrap table.crops td:nth-child(7){order:6}
+.tablewrap table.crops td:nth-child(5){order:7}.tablewrap table.crops td:nth-child(6){order:8}.tablewrap table.crops td:nth-child(8){order:9}
+.tablewrap table.crops td:nth-child(10){order:10;grid-column:1/-1;justify-content:flex-start;text-align:left;background:none;border:0;padding:0 2px;font-weight:400}
+.tablewrap table.crops td:nth-child(10):empty{display:none}
+.tablewrap table.crops td .muted{font-weight:400}
+.tablewrap table.crops th.on{background:var(--berry,#6e1f3d);border-color:var(--berry,#6e1f3d);color:#fff}
+/* tomorrow's weather in its own box: phones only (computers show it small inside the weather box) */
+.wx.wx-tmr{display:none!important}
+/* Phone header: [character] [logo] [chest] [background] [day/night]
+                 [search, full width]
+                 [weather today] [date] [year] [weather tomorrow]   (each row fills the width) */
+@media (max-width:760px){
+  header .top{display:flex;flex-wrap:wrap;gap:8px 6px}
+  header .today{display:contents}
+  header .today>.muted{display:none}
+  header #charBox{order:1;margin:0}
+  header .top .brand{order:2;flex:1 1 0;min-width:0;height:40px;box-sizing:border-box;padding:2px 8px 2px 4px;
+    display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-rows:1fr 1fr;column-gap:6px;align-items:center;
+    font-size:14px;line-height:1;white-space:nowrap;overflow:hidden}
+  header .top .brand .ico{grid-row:1/3;width:30px;height:30px}
+  header .top .brand b{align-self:end;overflow:hidden;text-overflow:ellipsis}
+  header .top .brand span{align-self:start;overflow:hidden;text-overflow:ellipsis;padding-top:2px}
+  header .today #menuBtn{order:3;position:static;width:40px;min-width:40px}
+  header .today .datewrap:has(#bgBtn){order:4}
+  header .today #theme{order:5}
+  header .today .hbtn{width:40px;min-width:40px}
+  header .top .search{order:6;flex:1 1 100%}
+  header .today #wxBox{order:7}
+  header .today #wxBox .wx-next{display:none}
+  header .today .datewrap:has(#dateBtn){order:8;flex:1 1 0;min-width:0}
+  header .today #dateBtn{width:100%;justify-content:center}
+  header .today #yearBox{order:9}
+  header .today .wx.wx-tmr:not([hidden]){order:10;display:inline-flex!important}
+}
+@media (max-width:760px){header .today .wx:not([hidden]){width:40px;justify-content:center;padding:0}}
+/* one left button: the chest when no farm is connected, the farmer when one is */
+.charbox .chest{display:none;height:30px;width:auto;image-rendering:pixelated}
+.charbox:not(.live) .pchar{display:none}
+.charbox:not(.live) .chest{display:block}
+/* customize button (sewing machine): background + day/night in one pop-up */
+#bgBtn .sew{height:30px;width:auto;image-rendering:pixelated}
+.cz-head{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin:4px 6px 4px}
+.seg.cz-theme{margin:0 4px 8px;display:flex}
+.seg.cz-theme button{flex:1;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+:root .daynight.dn-light{background-size:203.3px auto;background-position:-24.7px -70.6px}
+:root .daynight.dn-dark{background-size:230.4px auto;background-position:-29.6px -23.2px}
+/* phones: row 1 is now [farmer/chest] [logo] [customize] */
+@media (max-width:760px){header .today .datewrap:has(#bgBtn){order:3}}

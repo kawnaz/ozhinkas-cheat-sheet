@@ -57,19 +57,12 @@ function liveDisconnect(){
 // The character button: while connected it switches between the farm's farmers
 function liveBadge(){
   const b=$("charBox");if(!b)return;
-  if(!st.farmCode||!live.snap){b.title="Character select (click to switch)";b.classList.remove("live");return;}
+  if(!st.farmCode||!live.snap){b.title="Save & share progress, connect your farm";b.setAttribute("aria-label","Save and share progress");b.classList.remove("live");return;}
   const f=liveFarmer(live.snap);b.classList.add("live");
-  b.title=`${f.name} · ${live.snap.farmName} Farm (from the game, updated ${new Date(live.updatedAt).toLocaleString()})`+(live.snap.farmers.length>1?". Click to switch farmer":". Click for farm info");
+  b.title=`${f.name} · ${live.snap.farmName} Farm (from the game, updated ${new Date(live.updatedAt).toLocaleString()})`+(live.snap.farmers.length>1?". Click to pick the farmer, farm info and saving":". Click for farm info and saving");b.setAttribute("aria-label","Farmer and farm connection");
 }
-$("charBox").onclick=()=>{
-  if(st.farmCode&&live.snap){
-    const fs=live.snap.farmers;
-    if(fs.length>1){const i=fs.indexOf(liveFarmer(live.snap));st.farmerId=fs[(i+1)%fs.length].id;applyLive(live.snap);save();syncHeader();render();liveBadge();}
-    else farmMenu();
-    return;
-  }
-  st.char=st.char==="dog"?"cat":"dog";applyChar();save();
-};
+// no farm connected: the chest (save & share); farm connected: the farmer (pick farmer, farm info, save & share)
+$("charBox").onclick=()=>{if(st.farmCode&&live.snap)farmMenu();else saveMenu();};
 
 function farmMenu(){
   let h=`<h1>${ic("Farmer")} Connect your farm</h1><div id="farmBox">`;
@@ -87,12 +80,13 @@ function farmMenu(){
       else h+=`<p class="small">Farmer: <b>${esc(s.farmers[0]?.name||"?")}</b></p>`;
     }else if(!live.error)h+=`<p class="small muted">Loading…</p>`;
     h+=`<p class="small muted">Farm code: ${esc(st.farmCode)}. While connected, the date, fish, bundles and spouse come from the game and update after each in-game night.</p>
-    <div class="toolbar"><button class="iconbtn" id="farmRefresh">Refresh now</button><button class="iconbtn" id="farmOff" style="color:var(--love)">Disconnect</button></div>`;
+    <div class="toolbar"><button class="iconbtn" id="farmRefresh">Refresh now</button><button class="iconbtn" id="farmSave">${ic("Chest")} Save &amp; share</button><button class="iconbtn" id="farmOff" style="color:var(--love)">Disconnect</button></div>`;
   }
   openModal(h+"</div>");
   const go=$("farmGo");
   if(go)go.onclick=()=>{const c=liveCode($("farmCodeIn").value);if(!c){alert("That doesn't look like a farm code (12 letters and numbers).");return;}liveConnect(c);farmMenu();};
   if($("farmRefresh"))$("farmRefresh").onclick=()=>liveLoad();
+  if($("farmSave"))$("farmSave").onclick=()=>saveMenu();
   if($("farmOff"))$("farmOff").onclick=()=>{if(confirm("Disconnect this farm? Your earlier manual checkmarks come back."))liveDisconnect();closeModal();};
   if($("farmWho"))$("farmWho").onchange=e=>{st.farmerId=e.target.value;applyLive(live.snap);save();syncHeader();render();liveBadge();};
 }

@@ -580,7 +580,7 @@ function renderCrops(){
   // crops that earn nothing (0 gold/day: no harvest before the season ends) always go to the bottom, greyed out
   const dead=r=>r.gpd<=0;
   rows.sort((a,b)=>(dead(a)-dead(b))||(()=>{const x=key(a),y=key(b);return (typeof x==="string"?x.localeCompare(y):x-y)*ui.cDir;})());
-  const th=(k,l,num)=>`<th class="${num?"num":""}" data-csort="${k}">${l}${ui.cSort===k?(ui.cDir>0?" ▲":" ▼"):""}</th>`;
+  const th=(k,l,num)=>`<th class="${num?"num":""}${ui.cSort===k?" on":""}" data-csort="${k}">${l}${ui.cSort===k?(ui.cDir>0?" ▲":" ▼"):""}</th>`;
   return `<h1>Crops</h1><p class="sub">Profit calculator: one tile, planted on the day you pick, replanted after each harvest (or left to regrow) until the season ends.</p>
   <div class="toolbar">
     <div class="seg">${SEASONS.slice(0,3).map(x=>`<button class="${x===s?"on":""}" data-cs="${x}">${SICON[x]} ${cap(x)}</button>`).join("")}</div>
@@ -790,6 +790,8 @@ document.addEventListener("click",e=>{
   if(e.target.closest("#bgBtn")){toggleDatePop(false);toggleBgPop();return;}
   const bo=e.target.closest("[data-bgopt]");
   if(bo){st.bg=bo.dataset.bgopt;save();applyBg();toggleBgPop(false);return;}
+  const tho=e.target.closest("[data-themeopt]");
+  if(tho){st.theme=tho.dataset.themeopt;applyTheme();applyBg();save();$("bgPop").innerHTML=bgMenu();return;}
   if(!e.target.closest("#bgPop"))toggleBgPop(false);
   // date picker
   if(e.target.closest("#dateBtn")){toggleDatePop();return;}
@@ -846,12 +848,10 @@ let qt;$("q").addEventListener("input",e=>{clearTimeout(qt);qt=setTimeout(()=>{q
   const onSearch=location.hash.startsWith("#search/");
   if(query)nav("search/"+encodeURIComponent(query),onSearch);else if(onSearch)nav(pageHash(),true);
   render();},120);});
-$("menuBtn").onclick=saveMenu;
 // character select (placeholder): clicking swaps between the cat and dog heads; remembered in this browser
 const applyChar=()=>{const p=document.querySelector("#charBox .pchar");if(p)p.className="pchar pchar-"+(st.char==="dog"?"dog":"cat");};
 applyChar();
-$("charBox").onclick=()=>{st.char=st.char==="dog"?"cat":"dog";applyChar();save();};
-$("theme").onclick=()=>{const dark=matchMedia("(prefers-color-scheme: dark)").matches;const cur=st.theme||(dark?"dark":"light");st.theme=cur==="dark"?"light":"dark";applyTheme();save();};
+const curTheme=()=>st.theme||(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light");
 /* ---- Seasonal decorations ----
    side strips (wide screens only): climbing vines with wooden info plaques;
    header: a full-width strip of grass under the tabs, with farm things and Junimos standing on it in the empty space either side of the page */
@@ -928,7 +928,7 @@ function renderRails(){
   const ev=e=>`<div class="rail-ev">${evHTML(e)}${e.when?`<span class="small muted">${e.when}</span>`:""}</div>`;
   const bp=bundleProgress();
   L.innerHTML=plaque(`${SICON[season]} ${cap(season)} ${day} · Y${st.year}`,today.length?today.map(ev).join(""):`<p class="small muted">Nothing special today.</p>`,"calendar")
-    +plaque("Coming up",up.length?up.slice(0,6).map(ev).join(""):`<p class="small muted">Quiet week ahead.</p>`,"calendar")
+    +plaque("This Week",up.length?up.slice(0,6).map(ev).join(""):`<p class="small muted">Quiet week ahead.</p>`,"calendar")
     +plaque("Community Center",`<div class="bar" title="${bp.done} of ${bp.total} items donated"><i style="width:${(bp.done/bp.total*100).toFixed(1)}%"></i></div><div class="rail-cc"><b>${bp.bundlesDone}</b> / ${BUNDLES.length} bundles</div>${roomsInProgress()}`,"bundles");
   const plant=CROPS.filter(c=>c.s.includes(season)&&c.seed!=null&&!cropLock(c,day)).map(c=>({c,...cropCalc(c,season,day)})).filter(x=>x.profit>0).sort((a,b)=>b.gpd-a.gpd).slice(0,4);
   const allFish=FISH.filter(f=>f.s.includes(season)&&!st.fish[f.n]&&unlocked(f));
@@ -964,8 +964,8 @@ const BGS=[["paper","Old paper",null],["w001","Honey Wood","Wallpaper 001"],["w1
 const wallBg=(f,trim=16,z=1)=>{if(!f)return "none";const u=tileURL(f),S=96*z,step=(96-trim)*z,L=[];for(let k=Math.ceil(2200/step);k>=0;k--)L.push(`${u} 0 ${k*step}px/${S}px ${S}px repeat-x`);return L.join(",");};
 const tileURL=f=>f?`url('${WIKI}${encodeURIComponent(f.replace(/ /g,"_"))}.png')`:"none";
 function applyBg(){const b=BGS.find(x=>x[0]===st.bg)||BGS[0],r=document.documentElement;r.dataset.bg=b[0];r.style.setProperty("--tile",tileURL(b[2]));r.style.setProperty("--wall",wallBg(b[2],b[3],2));   /* page wallpaper at double size */r.style.setProperty("--tileicon",tileURL(b[2]&&b[2]+" Icon"));
-  $("bgBtn").title="Background: "+b[1]+". Click to change";}
-function bgMenu(){const cur=st.bg||"paper";return `<div class="bg-list">${BGS.map(([k,l,f])=>`<button type="button" role="menuitemradio" aria-checked="${k===cur}" class="bg-opt ${k===cur?"on":""}" data-bgopt="${k}">
+  $("bgBtn").title="Customize (background: "+b[1]+", "+(curTheme()==="dark"?"night":"day")+")";}
+function bgMenu(){const cur=st.bg||"paper",th=curTheme();return `<div class="cz-head">Day / night</div><div class="seg cz-theme" role="group" aria-label="Day or night">${[["light","Day"],["dark","Night"]].map(([k,l])=>`<button type="button" class="${th===k?"on":""}" data-themeopt="${k}" aria-pressed="${th===k}"><span class="daynight dn-${k}"></span>${l}</button>`).join("")}</div><div class="cz-head">Background</div><div class="bg-list">${BGS.map(([k,l,f])=>`<button type="button" role="menuitemradio" aria-checked="${k===cur}" class="bg-opt ${k===cur?"on":""}" data-bgopt="${k}">
   ${f?`<span class="bg-sw bg-ico" style="background-image:${tileURL(f+" Icon")}"></span>`:`<span class="bg-sw paper"></span>`}<span>${esc(l)}</span></button>`).join("")}</div>`;}
 function toggleBgPop(open){const p=$("bgPop");const was=p.classList.contains("open");if(open===false&&!was)return;open=open??!was;if(open)p.innerHTML=bgMenu();p.classList.toggle("open",open);$("bgBtn").setAttribute("aria-expanded",open);}
 function applyTheme(){if(st.theme)document.documentElement.dataset.theme=st.theme;}
@@ -977,11 +977,13 @@ const wxName=id=>(WEATHER[id]||[0,id||"?"])[1];
 // today's weather, only while the dashboard shows the same day as the uploaded farm
 function liveWeather(){const s=typeof live!=="undefined"&&live.snap;if(!s||!s.weather||!st.farmCode)return null;
   const d=s.date;return d.season===st.season&&d.day===st.day&&d.year===st.year?s.weather:null;}
-function syncWeather(){const b=$("wxBox"),w=liveWeather();if(!b)return;b.hidden=!w;if(!w)return;
+function syncWeather(){const b=$("wxBox"),t=$("wxNext"),w=liveWeather();if(!b)return;b.hidden=!w;if(t)t.hidden=!w;if(!w)return;
   const nxt=SEASONS[(SEASONS.indexOf(st.season)+(st.day===28?1:0))%4];
   b.innerHTML=img(wxIcon(w.today,st.season),"wx-i");
   b.title=`Weather today: ${wxName(w.today)} · Tomorrow (TV forecast): ${wxName(w.tomorrow)}`;
-  b.innerHTML+=`<span class="wx-next">${img(wxIcon(w.tomorrow,nxt),"wx-i")}</span>`;}
+  b.innerHTML+=`<span class="wx-next">${img(wxIcon(w.tomorrow,nxt),"wx-i")}</span>`;
+  // phones show tomorrow in its own box at the end of the date row
+  if(t){t.innerHTML=img(wxIcon(w.tomorrow,nxt),"wx-i");t.title=`Tomorrow (TV forecast): ${wxName(w.tomorrow)}`;}}
 function syncHeader(){syncWeather();$("dateBtn").innerHTML=`${SICON[st.season]}<span>${cap(st.season)} ${st.day}</span><i>▾</i>`;$("dateBtn").title="Today in your game: "+cap(st.season)+" "+st.day+". Click to change";
   $("yearBox").innerHTML=`<span title="Year in your game">Year ${st.year}</span><div class="yr-btns"><button type="button" data-yr="1" title="Next year" aria-label="Next year">+</button><button type="button" data-yr="-1" ${st.year<=1?"disabled":""} title="Previous year" aria-label="Previous year">−</button></div>`;if($("datePop").classList.contains("open"))$("datePop").innerHTML=miniCal();applyTheme();applyBg();}
 

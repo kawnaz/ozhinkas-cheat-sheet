@@ -9,7 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&display=swap" rel="stylesheet">
 <!-- numbers only: a pixel font whose digits are easy to tell apart (Pixelify's 2 and 5 look alike) -->
 <link href="https://fonts.googleapis.com/css2?family=Silkscreen&text=0123456789&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=6.1">
+<link rel="stylesheet" href="css/style.css?v=6.5">
 </head>
 <body>
 <header>
@@ -18,7 +18,8 @@
   <div class="top">
     <div class="brand"><img class="ico" src="https://stardewvalleywiki.com/Special:FilePath/Blackberry.png" alt="" onerror="this.remove()"><b>Ozhinka's</b> <span>Cheat Sheet</span></div>
     <!-- character select: placeholder heads for now; will be connected to the game later (SMAPI mod) -->
-    <button class="charbox" id="charBox" type="button" title="Character select (click to switch)" aria-label="Character select: click to switch"><span class="pchar pchar-cat"></span></button>
+    <!-- one button: the save/share chest, or (with a farm connected) the farmer -->
+    <button class="charbox" id="charBox" type="button" title="Save & share progress, connect your farm" aria-label="Save and share progress"><span class="pchar pchar-cat"></span><img class="chest" src="https://stardewvalleywiki.com/Special:FilePath/Chest.png" alt="" onerror="this.remove()"></button>
     <div class="search"><input id="q" type="search" placeholder="Search anything — villager, item, crop, fish, bundle…" autocomplete="off"></div>
     <div class="today" title="Set your current in-game date">
       <span class="muted">Today:</span>
@@ -28,12 +29,11 @@
       </div>
       <span class="wx" id="wxBox" hidden></span>
       <div class="yearbox" id="yearBox" role="group" aria-label="Year in your game"></div>
+      <span class="wx wx-tmr" id="wxNext" hidden></span>
       <div class="datewrap">
-        <button class="iconbtn hbtn" id="bgBtn" type="button" title="Choose a background" aria-haspopup="true" aria-expanded="false"><span class="bg-sw"></span></button>
-        <div class="date-pop bg-pop" id="bgPop" role="menu" aria-label="Choose a background"></div>
+        <button class="iconbtn hbtn" id="bgBtn" type="button" title="Customize: background and day/night" aria-haspopup="true" aria-expanded="false"><img class="sew" src="https://stardewvalleywiki.com/Special:FilePath/Sewing_Machine.png" alt="Customize" onerror="this.replaceWith('Style')"></button>
+        <div class="date-pop bg-pop" id="bgPop" role="menu" aria-label="Customize"></div>
       </div>
-      <button class="iconbtn hbtn" id="theme" title="Switch day (light) / night (dark)" aria-label="Switch light or dark theme"><span class="daynight"></span></button>
-      <button class="iconbtn hbtn" id="menuBtn" title="Save / load progress" aria-label="Save or load progress"><img class="chest" src="https://stardewvalleywiki.com/Special:FilePath/Chest.png" alt="" onerror="this.replaceWith('Save')"></button>
     </div>
   </div>
   <nav id="nav"></nav>
@@ -47,13 +47,13 @@
 <input type="file" id="importFile" accept=".json,application/json" hidden>
 <div class="sv-tip" id="svtip"></div>
 
-<script src="js/data.js?v=6.1"></script>
-<script src="js/gifts.js?v=6.1"></script>
-<script src="js/villager-info.js?v=6.1"></script>
-<script src="js/schedules.js?v=6.1"></script>
-<script src="js/animals.js?v=6.1"></script>
-<script src="js/prices.js?v=6.1"></script>
-<script src="js/app.js?v=6.1"></script>
-<script src="js/live.js?v=6.1"></script>
+<script src="js/data.js?v=6.5"></script>
+<script src="js/gifts.js?v=6.5"></script>
+<script src="js/villager-info.js?v=6.5"></script>
+<script src="js/schedules.js?v=6.5"></script>
+<script src="js/animals.js?v=6.5"></script>
+<script src="js/prices.js?v=6.5"></script>
+<script src="js/app.js?v=6.5"></script>
+<script src="js/live.js?v=6.5"></script>
 </body>
 </html>
