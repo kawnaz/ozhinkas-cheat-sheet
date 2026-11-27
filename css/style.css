@@ -384,8 +384,12 @@ a.wiki:hover{background:var(--accent);color:var(--accent-ink)}
 .vp-wrap{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:18px;align-items:start}
 .vp-main{min-width:0}
 .vp-main>.vp-tabs{margin-bottom:14px}
-/* romance badge: outline heart = can be married (dating/married use in-game icons) */
-.rel-heart{color:var(--love);font-size:20px;line-height:1;font-weight:700;padding:0 2px}
+/* romance badge: "can be married" = the Bouquet as a grey shadow (full colour once dating) */
+.rel-badge .ico.md,.vname .rel-badge .ico.md{width:14px;height:14px}
+/* two stacked copies: a grey silhouette underneath, the real Bouquet on top at ~10% so a hint of colour and outline shows */
+.rel-shadow{position:relative;display:inline-flex}
+.rel-shadow img:first-child{filter:brightness(0) invert(.55);opacity:.55}
+.rel-shadow img:last-child{position:absolute;inset:0;opacity:.1}
 /* tabs + relationship hearts on one row (hearts wrap underneath on narrow screens) */
 .vp-top{display:flex;flex-wrap:wrap;align-items:center;gap:8px 18px;margin-bottom:14px}
 .vp-top>.vp-tabs{margin-bottom:0}

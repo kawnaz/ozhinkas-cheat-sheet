@@ -55,13 +55,13 @@ const FEST_ICON={"Egg Festival":"Easter Egg",   // images/Easter_Egg.png: a pain
 const IC={bday:()=>ic("Gift Icon","Birthday"),fest:n=>FEST_ICON[n]?ic(FEST_ICON[n],n):ic("StatusFestival","Festival"),rain:()=>ic("StatusRain","Rain"),sun:()=>ic("StatusSun","Sun"),
   note:()=>ic("Quest","Note"),time:()=>ic("Time Icon","Time"),star:()=>ic("Gold Quality Icon","Legendary"),done:()=>ic("Junimo Icon","Complete"),
   place:()=>ic("Wood Sign","Where"),tip:()=>ic("Lost Book","Tip"),info:()=>ic("Magnifying Glass","More info")};
-/* Romance badge for marriage candidates: ♡ = can be married, Bouquet = dating/engaged, Mermaid's Pendant = married.
+/* Romance badge for marriage candidates: grey Bouquet shadow = can be married, Bouquet = dating/engaged, Mermaid's Pendant = married.
    Status comes from the connected farm (live.js); without one, only "married" (set by hand) is known. */
 const relStatus=name=>{const lf=typeof liveFriend==="function"?liveFriend(name):undefined,s=lf&&lf.status;
   if(st.spouse===name||s==="Married")return "married";if(s==="Engaged")return "engaged";if(s==="Dating")return "dating";return "single";};
-const REL={single:["Can be married",null],dating:["Dating you","Bouquet"],engaged:["Engaged to you","Bouquet"],married:["Married to you","Mermaid's Pendant"]};
+const REL={single:["Can be married","Bouquet"],dating:["Dating you","Bouquet"],engaged:["Engaged to you","Bouquet"],married:["Married to you","Mermaid's Pendant"]};
 const MARRY=name=>{const k=relStatus(name),[t,icon]=REL[k];
-  return `<span class="rel-badge ${k}" title="${t}" style="display:inline-flex;vertical-align:middle">${icon?img(icon,"md"):'<span class="rel-heart" aria-hidden="true">♡</span>'}</span>`;};
+  return `<span class="rel-badge ${k}" title="${t}" style="display:inline-flex;vertical-align:middle">${k==="single"?`<span class="rel-shadow">${img(icon,"md")}${img(icon,"md")}</span>`:img(icon,"md")}</span>`;};
 const ipill=(name,c="")=>/^(All|Most) /.test(name)
   ? `<span class="pill ${c} cat catlink" data-cat="${esc(name)}" title="${esc(name)}">${esc(catLabel(name))}</span>`
   : `<span class="pill ${c} item" data-search="${esc(baseName(name))}">${img(name,"sm")}${esc(name)}</span>`;
