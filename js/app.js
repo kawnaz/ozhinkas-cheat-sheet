@@ -471,7 +471,6 @@ function renderVillagerPage(name){
         <div><span class="muted">Lives at</span><b>${esc(v.home)}</b></div>
         ${v.m?`<div><span class="muted">Romance</span><b>${MARRY(v.n)} ${REL[relStatus(v.n)][0]}</b></div>`:""}
       </div>
-      <div class="vp-loves"><span class="muted">Loves</span>${gtiles(v.loves)}</div>
     </aside>
   </div>`;
 }
@@ -595,7 +594,7 @@ function renderCrops(){
     <button type="button" class="iconbtn small tglbtn ${ui.tiller?"on":""}" data-tiller aria-pressed="${ui.tiller}" title="Tiller profession: crops sell for 10% more">${ic("Tiller")} Tiller +10%</button>    <label class="small"><input type="checkbox" id="special" ${ui.special?"checked":""}> Show crops you can't buy seeds for (yet)</label>
   </div>
   ${s==="winter"?'<p class="muted">Nothing grows outdoors in winter except Winter Seeds (forage). Use the Greenhouse!</p>':""}
-  <div class="tablewrap"><table>
+  <div class="tablewrap"><table class="crops">
     <tr>${th("n","Crop")}<th>Seasons</th>${th("days","Grow",1)}${th("re","Regrow",1)}${th("sell","Sells",1)}${th("single","Profit (1)",1)}${th("h","Harvests",1)}${th("profit","Total profit",1)}${th("gpd","Gold/day",1)}<th>Notes</th></tr>
     ${rows.map(r=>`<tr class="${r.lock?"locked":""} ${dead(r)?"dead":""}" ${dead(r)?`title="No harvest before the season ends if planted on ${cap(s)} ${ui.plantDay}"`:""}><td><div class="crop-cell">${cropIcon(r.c)}<div><b class="item" data-search="${esc(cropName(r.c))}">${esc(cropName(r.c))}</b> ${wiki(cropName(r.c),"↗")}${r.lock?`<span class="crop-lock" title="You can't buy these seeds yet in Year ${st.year}">${r.lock}</span>`:""}
         <div class="crop-seed" title="Seed price">${r.c.seed==null?'<span class="muted">seed n/a</span>':g(r.c.seed)}</div></div></div></td><td>${seasonPills(r.c.s)}</td>

@@ -997,3 +997,38 @@ header::after{height:32px;background:var(--grass,linear-gradient(#3d8c3c,#3d8c3c
   .rooms>details.sec.room:not(.room-joja):not([open])>summary .room-prog{grid-column:1/4;grid-row:3;justify-content:flex-start}
   .rooms>details.sec.room:not(.room-joja):not([open])>summary .room-count{min-width:0;font-size:13px}
 }
+/* Villager page on phones: everything centred, one column: portrait, name, facts, loved gifts */
+@container (max-width:520px){
+  .vp-side.card.sv-card{display:flex;flex-direction:column;align-items:center;text-align:center}
+  .vp-side .vp-por{order:-1;margin:0 0 8px}
+  .vp-side h2{text-align:center;margin:0 0 10px}
+  .vp-side .vp-facts{flex-direction:column;align-items:center;gap:8px}
+  .vp-side .vp-facts>div{align-items:center}
+  .vp-side .vp-facts b{justify-content:center}
+  .vp-side .vp-loves{align-self:stretch;display:flex;flex-direction:column;align-items:center}
+  .vp-side .vp-loves .gtiles{justify-content:center}
+}
+/* Gift lists on phones (villager Gifts tab, Universal gifts): gifts centred, the Loves/Likes/... title stays top-left */
+@media (max-width:760px){
+  .uni-row .gtiles{justify-content:center;align-self:stretch}
+}
+/* Crops on phones and narrow screens: each crop is a small card instead of a long label/value list:
+   name + seed price and seasons on top, gold per day highlighted, then 6 small stat tiles, then the note */
+@container (max-width:930px){
+  .tablewrap table.crops tr:not(:first-child){display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;padding:10px 12px}
+  .tablewrap table.crops td{display:flex;flex-wrap:wrap;justify-content:center;align-items:baseline;gap:0 4px;text-align:center;padding:4px 2px;
+    background:rgba(255,255,255,.4);border:1px solid rgba(201,138,74,.35);border-radius:8px;font-weight:700;min-width:0!important}
+  .tablewrap table.crops td::before{flex-basis:100%;font-size:11px;font-weight:700;color:var(--muted);text-align:center;margin-bottom:1px}
+  .tablewrap table.crops td:nth-child(1){order:1;grid-column:1/3;justify-content:flex-start;align-items:center;background:none;border:0;text-align:left;font-weight:400}
+  .tablewrap table.crops td:nth-child(2){order:2;justify-content:flex-end;align-items:center;background:none;border:0}
+  .tablewrap table.crops td:nth-child(1)::before,.tablewrap table.crops td:nth-child(2)::before,.tablewrap table.crops td:nth-child(10)::before{display:none}
+  .tablewrap table.crops td:nth-child(9){order:3;grid-column:1/-1;flex-wrap:nowrap;justify-content:space-between;align-items:center;padding:5px 10px;
+    background:#fbe3b0;border-color:#c98a4a;font-size:16px}
+  .tablewrap table.crops td:nth-child(9)::before{flex-basis:auto;font-size:13px;margin:0;color:#7a4a22}
+  .tablewrap table.crops td:nth-child(3){order:4}.tablewrap table.crops td:nth-child(4){order:5}.tablewrap table.crops td:nth-child(7){order:6}
+  .tablewrap table.crops td:nth-child(5){order:7}.tablewrap table.crops td:nth-child(6){order:8}.tablewrap table.crops td:nth-child(8){order:9}
+  .tablewrap table.crops td:nth-child(10){order:10;grid-column:1/-1;justify-content:flex-start;text-align:left;background:none;border:0;padding:0 2px;font-weight:400}
+  .tablewrap table.crops td:nth-child(10):empty{display:none}
+  .tablewrap table.crops td .muted{font-weight:400}
+}
+.vp-side .vp-facts:last-child{margin-bottom:0}
