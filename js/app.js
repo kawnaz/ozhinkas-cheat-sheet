@@ -172,7 +172,10 @@ function readHash(){const [t,...rest]=location.hash.slice(1).split("/"),p=rest.j
   if(t==="search"){query=decodeURIComponent(p||"");$("q").value=query;return true;}
   if(!TABS.some(x=>x[0]===t))return false;
   query="";$("q").value="";ui.vFind="";
-  view=t;ui.vPage=t==="villagers"&&p?decodeURIComponent(p):null;if(ui.vPage)st.vTab="villagers";return true;}
+  const prevPage=ui.vPage;
+  view=t;ui.vPage=t==="villagers"&&p?decodeURIComponent(p):null;if(ui.vPage)st.vTab="villagers";
+  if(ui.vPage&&ui.vPage!==prevPage)st.vpTab="gifts";   // a newly opened profile starts on Gifts
+  return true;}
 
 function render(){
   renderNav();
@@ -315,7 +318,7 @@ function renderVillagers(){
 /* ---- One villager's page: short bio, then Gifts / Schedule / Heart events tabs ---- */
 const VPTABS=[["gifts","Gifts","Gift Icon"],["schedule","Schedule","Time Icon"],["hearts","Heart events","HeartIconLarge"]];
 const wikiAt=(name,anchor,label)=>`<a class="wiki" href="${wikiURL(name)}#${anchor}" target="_blank" rel="noopener">${label}</a>`;
-function openVillager(name){closeModal();view="villagers";query="";$("q").value="";st.vTab="villagers";ui.vPage=name;save();
+function openVillager(name){closeModal();view="villagers";query="";$("q").value="";st.vTab="villagers";ui.vPage=name;st.vpTab="gifts";save();
   nav("villagers/"+encodeURIComponent(name));render();scrollTo(0,0);}
 /* ---- Villager schedules (data in js/schedules.js, in the wiki's priority order: the first entry that fits wins) ---- */
 const WDAYS=["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
