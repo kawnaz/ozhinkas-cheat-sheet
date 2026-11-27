@@ -59,10 +59,31 @@ function liveBadge(){
   const b=$("charBox");if(!b)return;
   if(!st.farmCode||!live.snap){b.title="Save & share progress, connect your farm";b.setAttribute("aria-label","Save and share progress");b.classList.remove("live");return;}
   const f=liveFarmer(live.snap);b.classList.add("live");
-  b.title=`${f.name} · ${live.snap.farmName} Farm (from the game, updated ${new Date(live.updatedAt).toLocaleString()})`+(live.snap.farmers.length>1?". Click to pick the farmer, farm info and saving":". Click for farm info and saving");b.setAttribute("aria-label","Farmer and farm connection");
+  b.title=`${f.name} · ${live.snap.farmName} Farm (from the game, updated ${new Date(live.updatedAt).toLocaleString()})`+". Click to switch farmer, farm info and saving";b.setAttribute("aria-label","Farmer and farm connection");
 }
-// no farm connected: the chest (save & share); farm connected: the farmer (pick farmer, farm info, save & share)
-$("charBox").onclick=()=>{if(st.farmCode&&live.snap)farmMenu();else saveMenu();};
+// no farm connected: the chest (save & share). Farm connected: the farmer's face; clicking it drops down a menu
+// with the farm's other farmers (the one shown in the box is left out) and the farm connection / saving.
+$("charBox").onclick=e=>{e.stopPropagation();if(st.farmCode&&live.snap)charPop();else saveMenu();};
+function charPop(open){
+  let p=$("charPop");const was=!!p;
+  if(open===false||was){if(p)p.remove();$("charBox").setAttribute("aria-expanded","false");if(was||open===false)return;}
+  const s=live.snap,cur=liveFarmer(s),others=s.farmers.filter(f=>f!==cur);
+  p=document.createElement("div");p.id="charPop";p.className="char-pop";p.setAttribute("role","menu");
+  p.innerHTML=(others.length?others.map(f=>`<button type="button" role="menuitem" class="cp-item" data-farmer="${esc(f.id)}"><span class="pchar pchar-${st.char==="dog"?"dog":"cat"}"></span><span class="cp-name">${esc(f.name)}${f.isHost?' <i class="cp-host">host</i>':""}</span></button>`).join("")
+    :`<p class="cp-none">Only ${esc(cur.name)} on this farm.</p>`)
+    +`<button type="button" role="menuitem" class="cp-item cp-farm" data-farminfo>${ic("Chest")}<span class="cp-name">Farm &amp; saving</span></button>`;
+  const r=$("charBox").getBoundingClientRect();
+  p.style.top=(r.bottom+6)+"px";p.style.left=Math.max(8,r.left)+"px";
+  document.body.appendChild(p);$("charBox").setAttribute("aria-expanded","true");
+}
+document.addEventListener("click",e=>{
+  const fb=e.target.closest("#charPop [data-farmer]");
+  if(fb){st.farmerId=fb.dataset.farmer;charPop(false);applyLive(live.snap);save();syncHeader();render();liveBadge();return;}
+  if(e.target.closest("#charPop [data-farminfo]")){charPop(false);farmMenu();return;}
+  if(!e.target.closest("#charPop"))charPop(false);
+});
+addEventListener("scroll",()=>charPop(false),{passive:true});
+addEventListener("resize",()=>charPop(false));
 
 function farmMenu(){
   let h=`<h1>${ic("Farmer")} Connect your farm</h1><div id="farmBox">`;

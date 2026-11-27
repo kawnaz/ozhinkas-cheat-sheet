@@ -1102,3 +1102,255 @@ header::after{height:32px;background:var(--grass,linear-gradient(#3d8c3c,#3d8c3c
 :root .daynight.dn-dark{background-size:230.4px auto;background-position:-29.6px -23.2px}
 /* phones: row 1 is now [farmer/chest] [logo] [customize] */
 @media (max-width:760px){header .today .datewrap:has(#bgBtn){order:3}}
+/* Fish on phones and narrow screens: each fish is a small card:
+   [icon + name ......... caught box] / [Where] [Time] [Weather] / [Seasons ......] [Price] / bundles
+   and the column headers become a "Sort by" row of buttons */
+@container (max-width:930px){
+  .tablewrap:has(table.fishes){background:none;border:0;box-shadow:none;border-radius:0}
+  .tablewrap table.fishes tbody{display:flex;flex-direction:column;gap:10px}
+  .tablewrap table.fishes tr:first-child{display:flex!important;flex-wrap:wrap;align-items:center;gap:6px;padding:0;border:0;background:none}
+  .tablewrap table.fishes tr:first-child::before{content:"Sort by:";font-size:13px;font-weight:700;color:var(--muted);margin-right:2px}
+  .tablewrap table.fishes th{position:static;display:inline-flex;padding:3px 10px;border:1px solid var(--line);border-radius:14px;background:var(--panel);font-size:13px}
+  .tablewrap table.fishes th:not([data-fsort]){display:none}
+  .tablewrap table.fishes th.on{background:var(--berry,#6e1f3d);border-color:var(--berry,#6e1f3d);color:#fff}
+  .tablewrap table.fishes tr:not(:first-child){display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;padding:10px 12px;width:auto;
+    background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow)}
+  .tablewrap table.fishes td{display:flex;flex-wrap:wrap;justify-content:center;align-items:baseline;gap:2px 4px;text-align:center;padding:4px 2px;width:auto;
+    background:rgba(255,255,255,.4);border:1px solid rgba(201,138,74,.35);border-radius:8px;font-weight:700;min-width:0!important;white-space:normal!important}
+  .tablewrap table.fishes td::before{flex-basis:100%;font-size:11px;font-weight:700;color:var(--muted);text-align:center;margin-bottom:1px}
+  /* name row */
+  .tablewrap table.fishes td:nth-child(2){order:1;grid-column:1/3;justify-content:flex-start;align-items:center;background:none;border:0;text-align:left;font-size:15px}
+  .tablewrap table.fishes td:nth-child(1){order:2;justify-content:flex-end;align-items:center;background:none;border:0}
+  .tablewrap table.fishes td:nth-child(1)::before,.tablewrap table.fishes td:nth-child(2)::before,.tablewrap table.fishes td:nth-child(8)::before{display:none}
+  .tablewrap table.fishes td:nth-child(1) input{width:22px!important;height:22px!important}
+  /* where / time / weather */
+  .tablewrap table.fishes td:nth-child(3){order:3}.tablewrap table.fishes td:nth-child(5){order:4}.tablewrap table.fishes td:nth-child(6){order:5}
+  /* seasons + price */
+  .tablewrap table.fishes td:nth-child(4){order:6;grid-column:1/3;align-items:center}
+  .tablewrap table.fishes td:nth-child(7){order:7;background:#fbe3b0;border-color:#c98a4a;font-size:15px}
+  /* bundles: just the pills, only when the fish is in one */
+  .tablewrap table.fishes td:nth-child(8){order:8;grid-column:1/-1;justify-content:flex-start;background:none;border:0;padding:0}
+  .tablewrap table.fishes td:nth-child(8):empty{display:none}
+  .tablewrap table.fishes tr.done{opacity:.6}
+}
+/* crops from found seeds: their own section under the shop crops (no second Sort by row) */
+.tablewrap table.crops.found tr:first-child{display:none!important}
+.found-h{margin:22px 0 4px;display:flex;align-items:center;gap:8px}
+/* folding crop / fish cards: a closed card keeps its top row (and the gold/day bar for crops) */
+.card-chev{display:none;font-style:normal;font-size:14px;color:var(--muted);transition:transform .15s;flex:none;width:14px;text-align:center}
+.tablewrap table.crops .card-chev{display:inline-block;order:9;margin-left:auto}
+.tablewrap table.crops .crop-cell{flex:1;min-width:0}
+.tablewrap table.crops tr:not(:first-child){cursor:pointer}
+.tablewrap table.crops tr.shut .card-chev{transform:rotate(-90deg)}
+.tablewrap table.crops tr.shut td:not(:nth-child(1)):not(:nth-child(2)):not(:nth-child(9)){display:none}
+.card-fold.fish-fold{display:none}
+@container (max-width:930px){
+  .card-fold.fish-fold{display:flex}
+  .tablewrap table.fishes .card-chev{display:inline-block;margin-right:2px}
+  .tablewrap table.fishes tr:not(:first-child){cursor:pointer}
+  .tablewrap table.fishes tr.shut .card-chev{transform:rotate(-90deg)}
+  .tablewrap table.fishes tr.shut td:not(:nth-child(1)):not(:nth-child(2)):not(:nth-child(3)):not(:nth-child(5)):not(:nth-child(6)){display:none}
+}
+.card-fold{gap:6px;margin:4px 0 8px}
+/* Crop and fish cards: the same wooden boxes as the villager cards, in a grid like the villagers */
+.tablewrap table.crops tr:not(:first-child),.tablewrap table.fishes tr:not(:first-child){border-radius:4px;border:4px solid #6b3414;color:#4a2208;
+  background:linear-gradient(170deg,#fde7b8 0%,#f6d296 55%,#ecbd78 100%);
+  box-shadow:inset 0 0 0 3px #c4763a,inset 0 0 0 5px #fbe3b0,0 4px 0 #3d1c07,0 8px 16px rgba(0,0,0,.2);padding:12px 14px}
+.tablewrap table.crops tr:not(:first-child):hover,.tablewrap table.fishes tr:not(:first-child):hover{filter:brightness(1.04)}
+.tablewrap table.crops td,.tablewrap table.fishes td{background:rgba(255,248,225,.55);border-color:#d9a868}
+.tablewrap table.crops td::before,.tablewrap table.fishes td::before{color:#8a5a2b}
+.tablewrap table.crops td:nth-child(9),.tablewrap table.fishes td:nth-child(7){background:#fff3d6;border-color:#c4763a}
+.tablewrap table.crops td:nth-child(1),.tablewrap table.crops td:nth-child(2),.tablewrap table.crops td:nth-child(10),
+.tablewrap table.fishes td:nth-child(1),.tablewrap table.fishes td:nth-child(2),.tablewrap table.fishes td:nth-child(8){background:none;border:0}
+.tablewrap table.crops b.item,.tablewrap table.fishes b.item{font-family:"Stardew","Silkscreen","Pixelify Sans",ui-monospace,monospace;color:#5a2a0c;font-size:16px}
+.tablewrap table.crops tbody{grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
+.tablewrap table.crops tr.shut,.tablewrap table.fishes tr.shut{align-self:start}
+/* fish: cards on every screen too (same layout the phones had) */
+.card-fold.fish-fold{display:flex}
+.tablewrap:has(table.fishes){background:none;border:0;box-shadow:none;border-radius:0}
+.tablewrap table.fishes,.tablewrap table.fishes tbody{display:block;width:100%}
+.tablewrap table.fishes tbody{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px;align-items:start}
+.tablewrap table.fishes tr:first-child{display:flex!important;flex-wrap:wrap;align-items:center;gap:6px;grid-column:1/-1;padding:0;border:0;background:none}
+.tablewrap table.fishes tr:first-child::before{content:"Sort by:";font-size:13px;font-weight:700;color:var(--muted);margin-right:2px}
+.tablewrap table.fishes th{position:static;display:inline-flex;padding:3px 10px;border:1px solid var(--line);border-radius:14px;background:var(--panel);font-size:13px}
+.tablewrap table.fishes th:not([data-fsort]){display:none}
+.tablewrap table.fishes th.on{background:var(--berry,#6e1f3d);border-color:var(--berry,#6e1f3d);color:#fff}
+.tablewrap table.fishes tr:not(:first-child){display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;width:auto;cursor:pointer}
+.tablewrap table.fishes td{display:flex;flex-wrap:wrap;justify-content:center;align-items:baseline;gap:2px 4px;text-align:center;padding:4px 2px;width:auto;
+  border-width:1px;border-style:solid;border-radius:8px;font-weight:700;min-width:0!important;white-space:normal!important}
+.tablewrap table.fishes td::before{content:attr(data-l);flex-basis:100%;font-size:11px;font-weight:700;text-align:center;margin-bottom:1px}
+.tablewrap table.fishes td:nth-child(2){order:1;grid-column:1/3;justify-content:flex-start;align-items:center;text-align:left}
+.tablewrap table.fishes td:nth-child(1){order:2;justify-content:flex-end;align-items:center}
+.tablewrap table.fishes td:nth-child(1)::before,.tablewrap table.fishes td:nth-child(2)::before,.tablewrap table.fishes td:nth-child(8)::before{display:none}
+.tablewrap table.fishes td:nth-child(1) input{width:22px!important;height:22px!important}
+.tablewrap table.fishes td:nth-child(3){order:3}.tablewrap table.fishes td:nth-child(5){order:4}.tablewrap table.fishes td:nth-child(6){order:5}
+.tablewrap table.fishes td:nth-child(4){order:6;grid-column:1/3;align-items:center}
+.tablewrap table.fishes td:nth-child(7){order:7;font-size:15px}
+.tablewrap table.fishes td:nth-child(8){order:8;grid-column:1/-1;justify-content:flex-start;padding:0}
+.tablewrap table.fishes td:nth-child(8):empty{display:none}
+.tablewrap table.fishes tr.done{opacity:.6}
+.tablewrap table.fishes .card-chev{display:inline-block;margin-right:2px}
+.tablewrap table.fishes tr.shut .card-chev{transform:rotate(-90deg)}
+.tablewrap table.fishes tr.shut td:not(:nth-child(1)):not(:nth-child(2)):not(:nth-child(3)):not(:nth-child(5)):not(:nth-child(6)){display:none}
+/* Crop and fish boxes as a list (one per row, like the villagers). On wide screens each box is one line:
+   crops: name | season | grow | regrow | harvests | sells | profit | total | gold/day, the note underneath
+   fish:  name | where | time | weather | seasons | price | caught, bundles underneath */
+.tablewrap:has(table.crops),.tablewrap:has(table.fishes){container-type:inline-size}
+.tablewrap table.crops tbody,.tablewrap table.fishes tbody{grid-template-columns:minmax(0,1fr);gap:10px}
+@media all{
+  .tablewrap table.crops tr:not(:first-child){grid-template-columns:minmax(150px,1.6fr) minmax(84px,auto) repeat(6,minmax(52px,1fr)) minmax(84px,1.1fr);align-items:center;padding:8px 12px}
+  .tablewrap table.crops td:nth-child(1),.tablewrap table.crops td:nth-child(9){grid-column:auto}
+  .tablewrap table.crops td:nth-child(2){justify-content:center}
+  .tablewrap table.crops td:nth-child(9){flex-wrap:wrap;justify-content:center;padding:4px 2px;font-size:15px;align-self:stretch;align-items:baseline}
+  .tablewrap table.crops td:nth-child(9)::before{flex-basis:100%;font-size:11px;color:#8a5a2b;margin-bottom:1px;text-align:center}
+  .tablewrap table.crops td:nth-child(3),.tablewrap table.crops td:nth-child(4),.tablewrap table.crops td:nth-child(5),
+  .tablewrap table.crops td:nth-child(6),.tablewrap table.crops td:nth-child(7),.tablewrap table.crops td:nth-child(8){align-self:stretch;align-content:center}
+  .tablewrap table.crops td:nth-child(9){order:10}
+  .tablewrap table.crops td:nth-child(10){order:11}
+  .tablewrap table.fishes tr:not(:first-child){grid-template-columns:minmax(150px,1.5fr) minmax(0,1.3fr) minmax(0,1fr) minmax(0,.8fr) minmax(0,1.6fr) minmax(70px,.8fr) auto;align-items:center;padding:8px 12px}
+  .tablewrap table.fishes td:nth-child(2),.tablewrap table.fishes td:nth-child(4){grid-column:auto}
+  .tablewrap table.fishes td:nth-child(3),.tablewrap table.fishes td:nth-child(4),.tablewrap table.fishes td:nth-child(5),
+  .tablewrap table.fishes td:nth-child(6),.tablewrap table.fishes td:nth-child(7){align-self:stretch;align-content:center}
+  .tablewrap table.fishes td:nth-child(1){order:8;padding-left:6px}
+  .tablewrap table.fishes td:nth-child(8){order:9}
+}
+/* folded fish: compact, no tick box, just name + where / time / weather (no tile labels) */
+.tablewrap table.fishes tr.shut td:nth-child(1){display:none}
+.tablewrap table.fishes tr.shut{padding:6px 12px;row-gap:4px}
+.tablewrap table.fishes tr.shut td:nth-child(2){grid-column:1/-1;font-size:14px}
+.tablewrap table.fishes tr.shut td:is(:nth-child(3),:nth-child(5),:nth-child(6)){padding:2px;font-size:12px;font-weight:700;align-items:center}
+.tablewrap table.fishes tr.shut td:is(:nth-child(3),:nth-child(5),:nth-child(6))::before{display:none}
+@media all{.tablewrap table.fishes tr.shut td:nth-child(2){grid-column:auto}}
+/* fish names centred (open and folded); the tick box sits in the top-right corner of the box */
+.tablewrap table.fishes tr:not(:first-child){position:relative}
+.tablewrap table.fishes td:nth-child(2),.tablewrap table.fishes tr.shut td:nth-child(2){grid-column:1/-1;justify-content:center;text-align:center;padding:0 30px}
+.tablewrap table.fishes td:nth-child(1){position:absolute;top:10px;right:12px;padding:0}
+@media all{
+  .tablewrap table.fishes td:nth-child(2),.tablewrap table.fishes tr.shut td:nth-child(2){grid-column:auto;padding:0 4px}
+  .tablewrap table.fishes td:nth-child(1){position:static;padding:0 0 0 6px}
+}
+/* fish boxes: no tick box at all (caught fish still fade); the wiki link only shows when the box is open */
+.tablewrap table.fishes td:nth-child(1){display:none!important}
+.tablewrap table.fishes tr.shut a.wiki{display:none}
+.tablewrap table.fishes td:nth-child(2){padding:0 4px}
+/* Fish: a normal table again whenever there's room (720px+); the boxes stay only for narrow screens / phones.
+   (no tick box column, no folding in the table) */
+@media all{
+  .tablewrap table.fishes{display:table!important;width:100%;background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);overflow:hidden}
+  .tablewrap table.fishes tbody{display:table-row-group!important}
+  .tablewrap table.fishes tr,.tablewrap table.fishes tr:first-child,.tablewrap table.fishes tr:not(:first-child){display:table-row!important;width:auto;padding:0;border:0;border-radius:0;background:none;box-shadow:none;position:static;cursor:default;filter:none}
+  .tablewrap table.fishes tr:first-child::before{display:none}
+  .tablewrap table.fishes tr th{display:table-cell!important;position:sticky;top:0;padding:9px 12px;border:0;border-bottom:1px solid var(--line);border-radius:0;background:var(--panel2);font-size:13px;color:inherit;width:auto}
+  .tablewrap table.fishes tr th.on{background:var(--panel2);color:var(--berry,#6e1f3d)}
+  .tablewrap table.fishes tr td{display:table-cell!important;width:auto;padding:9px 12px;border:0;border-bottom:1px solid var(--line);border-radius:0;background:none;
+    text-align:left;font-weight:400;font-size:14px;white-space:normal;position:static;vertical-align:middle}
+  .tablewrap table.fishes tr td.num,.tablewrap table.fishes tr th.num{text-align:right}
+  .tablewrap table.fishes tr td::before{display:none!important}
+  .tablewrap table.fishes tr td:nth-child(1),.tablewrap table.fishes tr th:first-child{display:none!important}
+  .tablewrap table.fishes tr td:nth-child(2) b.item{font-size:14px}
+  .tablewrap table.fishes tr.shut a.wiki{display:inline-block}
+  .tablewrap table.fishes .card-chev{display:none}
+  .tablewrap table.fishes tr:not(:first-child):hover{background:rgba(255,243,214,.5)}
+}
+/* Crops: a normal table again whenever there's room (720px+); boxes only on narrow screens / phones */
+@media all{
+  .tablewrap table.crops{display:table!important;width:100%;background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);overflow:hidden}
+  .tablewrap table.crops tbody{display:table-row-group!important}
+  .tablewrap table.crops tr,.tablewrap table.crops tr:first-child,.tablewrap table.crops tr:not(:first-child),.tablewrap table.crops.found tr:first-child{display:table-row!important;width:auto;padding:0;border:0;border-radius:0;background:none;box-shadow:none;position:static;cursor:default;filter:none}
+  .tablewrap table.crops tr:first-child::before{display:none}
+  .tablewrap table.crops tr th{display:table-cell!important;position:sticky;top:0;padding:9px 8px;border:0;border-bottom:1px solid var(--line);border-radius:0;background:var(--panel2);font-size:13px;color:inherit;width:auto}
+  .tablewrap table.crops tr th.on{background:var(--panel2);color:var(--berry,#6e1f3d)}
+  .tablewrap table.crops tr td{display:table-cell!important;width:auto;padding:9px 12px;border:0;border-bottom:1px solid var(--line);border-radius:0;background:none;
+    text-align:left;font-weight:400;font-size:14px;position:static;vertical-align:middle}
+  .tablewrap table.crops tr td.num,.tablewrap table.crops tr th.num{text-align:right}
+  .tablewrap table.crops tr td::before{display:none!important}
+  .tablewrap table.crops tr td:nth-child(10){font-size:13px;white-space:normal}
+  .tablewrap table.crops tr td:nth-child(9) b{font-size:14px}
+  .tablewrap table.crops tr td:nth-child(2) .pill{white-space:nowrap}
+  .tablewrap table.crops tr td:nth-child(1) b.item{font-size:14px}
+  .tablewrap table.crops .card-chev{display:none!important}
+  .tablewrap table.crops tr:not(:first-child):hover{background:rgba(255,243,214,.5)}
+}
+@media all{
+  .tablewrap table.fishes tr td:nth-child(2){text-align:left;padding:9px 12px;white-space:nowrap}
+  .tablewrap table.crops tr td:nth-child(1),.tablewrap table.crops tr td:nth-child(2){text-align:left}
+}
+.card-fold.wide-table{display:none!important}
+/* computers: the crop and fish tables keep their columns; if the page column is narrow they scroll sideways inside their box */
+@media (min-width:761px){
+  .tablewrap:has(table.crops),.tablewrap:has(table.fishes){overflow-x:auto}
+  .tablewrap table.crops{min-width:880px}
+  .tablewrap table.fishes{min-width:760px}
+}
+/* Phones: the crop and fish tables too, trimmed to the columns that matter and made compact
+   crops: Crop (seed price under the name) | Grow | Regrow | Total | Gold/day
+   fish:  Fish | Where | Time | Weather | Price */
+@media (max-width:760px){
+  .tablewrap:has(table.crops),.tablewrap:has(table.fishes){overflow-x:auto}
+  .tablewrap table.crops,.tablewrap table.fishes{min-width:0!important;border-radius:10px}
+  .tablewrap table.crops tr th,.tablewrap table.fishes tr th{padding:6px 5px;font-size:11px;white-space:normal;line-height:1.15}
+  .tablewrap table.crops tr td,.tablewrap table.fishes tr td{padding:6px 5px;font-size:12.5px;line-height:1.25}
+  .tablewrap table.crops tr :is(td,th):is(:nth-child(2),:nth-child(5),:nth-child(6),:nth-child(7),:nth-child(10)){display:none!important}
+  .tablewrap table.fishes tr :is(td,th):is(:nth-child(4),:nth-child(8)){display:none!important}
+  .tablewrap table.crops a.wiki,.tablewrap table.fishes a.wiki{display:none!important}
+  .tablewrap table.crops .crop-cell{gap:6px}
+  .tablewrap table.crops .crop-cell .ico,.tablewrap table.fishes td:nth-child(2) .ico{width:22px;height:22px}
+  .tablewrap table.crops tr td:nth-child(1) b.item,.tablewrap table.fishes tr td:nth-child(2) b.item{font-size:13px}
+  .tablewrap table.crops .crop-seed{font-size:11px;opacity:.8}
+  .tablewrap table.fishes tr td:nth-child(2){white-space:normal}
+  .tablewrap table.crops tr td:nth-child(9) b{font-size:13px}
+}
+@media (max-width:760px){
+  /* fish on phones: weather is just the rain/sun icon (blank when any weather), smaller fish icons beside the name */
+  .tablewrap table.fishes .wtxt{display:none}
+  .tablewrap table.fishes tr td:nth-child(6){text-align:center;width:1%}
+  .tablewrap table.fishes tr th:nth-child(6){font-size:0}
+  .tablewrap table.fishes tr th:nth-child(6)::after{content:"☂";font-size:13px}
+  .tablewrap table.fishes tr td:nth-child(2) .ico{width:18px;height:18px;vertical-align:middle;margin-right:3px}
+  .tablewrap table.fishes tr td:nth-child(7){white-space:nowrap}
+  .tablewrap table.fishes tr :is(td,th){padding-left:4px;padding-right:4px}
+}
+/* farmer drop-down under the face box (farm connected) */
+.char-pop{position:fixed;z-index:60;min-width:190px;max-width:calc(100vw - 16px);padding:6px;display:flex;flex-direction:column;gap:3px;
+  background:var(--panel);border:2px solid var(--line);border-radius:8px;box-shadow:0 2px 0 rgba(40,20,5,.35),0 8px 18px rgba(0,0,0,.25)}
+.cp-item{display:flex;align-items:center;gap:10px;padding:4px 8px 4px 4px;border:2px solid transparent;border-radius:6px;background:none;cursor:pointer;
+  font:700 15px "Stardew","Silkscreen","Pixelify Sans",monospace;color:var(--ink);text-align:left}
+.cp-item:hover,.cp-item:focus-visible{background:#fff3d6;border-color:#c98a4a;outline:none}
+.cp-item .pchar{width:32px;height:32px;border:2px solid var(--line);border-radius:6px;background-color:var(--bg);box-sizing:border-box}
+.cp-item .ico{width:28px;height:28px;margin:0 2px}
+.cp-host{font-style:normal;font-size:11px;color:var(--muted);margin-left:4px}
+.cp-farm{border-top:1px dashed var(--line);border-radius:0 0 6px 6px;margin-top:2px;padding-top:6px;font-size:13px}
+.cp-none{margin:4px 8px;font-size:13px;color:var(--muted)}
+/* Festivals on phones: two cards per row, a little more compact */
+@media (max-width:760px){
+  .grid.fest-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .fest-grid .card{padding:10px;min-width:0}
+  .fest-grid .card h2{font-size:15px;line-height:1.2;overflow-wrap:anywhere}
+  .fest-grid .card .small{font-size:12px}
+  .fest-grid .card p.small{font-size:12px;line-height:1.35}
+  .fest-grid .pill{font-size:11px}
+}
+/* festival cards: season icon + day / name / place / time / note; the whole card opens the wiki */
+a.card.fest-card{display:flex;flex-direction:column;gap:4px;text-decoration:none;color:inherit;cursor:pointer}
+a.card.fest-card:hover{border-color:var(--berry);filter:brightness(1.03)}
+.fest-top{display:flex;align-items:center;flex-wrap:wrap;gap:4px 8px}
+.fest-date{display:inline-flex;align-items:center;gap:6px;font:700 15px "Stardew","Silkscreen","Pixelify Sans",monospace}
+.fest-date .ico{width:26px;height:auto;margin:0}
+.fest-name{margin:2px 0 2px;font-size:18px;line-height:1.15}
+.fest-line{display:flex;align-items:flex-start;gap:6px;font-size:13px;color:var(--muted)}
+.fest-line .ico,.fest-line svg{flex:none;margin-top:1px}
+.fest-note{margin:4px 0 0;font-size:13px;line-height:1.4}
+@media (max-width:760px){
+  .fest-name{font-size:15px}
+  .fest-date{font-size:13px}
+  .fest-date .ico{width:22px}
+  .fest-line,.fest-note{font-size:12px}
+}
+.pill.fest-date{gap:4px;padding:1px 8px 1px 4px}
+.pill.fest-date b{font-weight:700}
+.pill.fest-date .ico{width:22px}
+/* Town list rows: a bit taller */
+.vlist .vblock{padding-top:11px;padding-bottom:11px}
+.vlist .vb-head .ico.hd{width:48px;height:48px}
+.iconbtn.vreset{height:38px;flex:none;white-space:nowrap}
+.iconbtn.vreset:disabled{opacity:.45;cursor:default}

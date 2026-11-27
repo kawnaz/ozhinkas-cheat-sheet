@@ -4,7 +4,7 @@ let st={season:"spring",day:1,year:1,fish:{},bundles:{},theme:null};
 try{const raw=localStorage.getItem(KEY);if(raw)st=Object.assign(st,JSON.parse(raw));}catch(e){}
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(st));}catch(e){}};
 let view="calendar", query="";
-const ui={vFilter:"all",cSeason:null,cSort:"gpd",cDir:-1,quality:1,tiller:false,riceWater:false,riceMill:false,special:false,plantDay:1,fSeason:null,fLoc:"all",fWeather:"all",fHide:false,fSort:"n",fDir:1,calSeason:null,bRoom:"all",vSort:"next",vPage:null};
+const ui={vFilter:"all",cSeason:null,cSort:"gpd",cDir:-1,quality:1,tiller:false,riceWater:false,riceMill:false,special:false,plantDay:1,fSeason:null,fLoc:"all",fWeather:"all",fHide:false,fSort:"n",fDir:1,calSeason:null,bRoom:"all",vSort:"hearts",vPage:null};
 
 /* ================= HELPERS ================= */
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -210,13 +210,16 @@ function render(){
 }
 // Town tab: a table when there's room for each villager's gifts on one line, otherwise villager boxes (like before)
 const VFIT=760,vRO=new ResizeObserver(()=>vFit());
-function vFit(){const b=document.querySelector(".vblocks[data-vfit]");if(!b)return;vRO.observe(b);
+function vFit(){foldFit();const b=document.querySelector(".vblocks[data-vfit]");if(!b)return;vRO.observe(b);
   const boxes=b.clientWidth<VFIT;if(b.classList.contains("vcards")===boxes)return;b.classList.toggle("vlist",!boxes);b.classList.toggle("vcards",boxes);}
+// crops / fish: the Expand all / Collapse all buttons only matter while the boxes are shown (table at 720px+)
+function foldFit(){const w=document.querySelector("main .tablewrap:has(table.crops),main .tablewrap:has(table.fishes)");if(!w)return;vRO.observe(w);
+  document.querySelectorAll(".card-fold").forEach(f=>f.classList.toggle("wide-table",true));}
 // Town tab: hide villager cards that don't match the "Find a villager" box (by name or home)
 function applyVFind(){if(query)return;const q=(ui.vFind||"").trim().toLowerCase(),cards=document.querySelectorAll(".vblock[data-find]");if(!cards.length)return;
   let n=0;cards.forEach(c=>{const ok=!q||c.dataset.find.includes(q);c.hidden=!ok;if(ok)n++;});
   const none=document.querySelector(".vfind-none");if(none)none.hidden=n>0;}
-document.addEventListener("input",e=>{if(e.target.id==="vFind"){ui.vFind=e.target.value;applyVFind();}});
+document.addEventListener("input",e=>{if(e.target.id==="vFind"){ui.vFind=e.target.value;applyVFind();const rb=document.querySelector("[data-vreset]");if(rb)rb.disabled=ui.vSort==="hearts"&&(ui.vRom||"all")==="all"&&!ui.vFind;}});
 // Money: never "123g" on screen, always the number followed by the in-game gold coin
 const MONEY=/(\d[\d,]*)g\b/g;
 function coinify(root){
@@ -310,7 +313,7 @@ const VROMBTN=()=>{const k=ui.vRom||"all",o=["all","rom","non"],nx=o[(o.indexOf(
   return `<button type="button" class="iconbtn vrom ${k}" data-vrom title="Showing: ${VROM[k][0]}. Click for: ${VROM[nx][0]}" aria-label="Showing ${VROM[k][0]}, click to change">${VROM[k][1]()}</button>`;};
 function renderVillagers(){
   const list=[...VILLAGERS];
-  if(!VSORTS[ui.vSort])ui.vSort="next";
+  if(!VSORTS[ui.vSort])ui.vSort="hearts";
   if(ui.vPage&&VILLAGERS.some(v=>v.n===ui.vPage))return renderVillagerPage(ui.vPage);
   const vtabs=`<div class="seg vtabs" role="tablist"><button type="button" role="tab" class="${st.vTab==="universal"?"":"on"}" data-vtab="villagers">${ic("HeartIconLarge")} Villagers</button><button type="button" role="tab" class="${st.vTab==="universal"?"on":""}" data-vtab="universal">${ic("Gift Icon")} Universal gifts</button></div>`;
   if(st.vTab==="universal")return renderUniversal(vtabs);
@@ -318,6 +321,7 @@ function renderVillagers(){
   <div class="toolbar">
     <input type="search" id="vFind" class="vfind" placeholder="Find a villager…" value="${esc(ui.vFind||"")}" autocomplete="off" aria-label="Find a villager">
     ${VROMBTN()}
+    <button type="button" class="iconbtn vreset" data-vreset title="Reset: most friendship points first, all villagers, empty search" ${ui.vSort==="hearts"&&(ui.vRom||"all")==="all"&&!ui.vFind?"disabled":""}>↺ Reset</button>
 </div>
   <div class="vblocks vlist" data-vfit><div class="vlist-head" role="row">${VCOLS.map(([l,a,b,desc])=>{const on=ui.vSort===a||ui.vSort===b;
     return a?`<button type="button" class="vh ${on?"on":""}" data-vsort="${on&&ui.vSort===a?b:a}" title="Sort: ${esc(VSORTS[on&&ui.vSort===a?b:a][0])}">${l}${on?`<i>${(ui.vSort===a)!==!!desc?"▲":"▼"}</i>`:""}</button>`:`<span class="vh">${l}</span>`;}).join("")}</div>${list.filter(v=>ui.vRom==="rom"?v.m:ui.vRom==="non"?!v.m:true).sort((a,b)=>VSORTS[ui.vSort][1](a,b,soon)||a.n.localeCompare(b.n)).map(v=>vblock(v)).join("")}</div>
@@ -536,7 +540,7 @@ function renderAnimals(){
   return `<h1>Animals & Artisan Goods</h1><p class="sub">Farm animals, what they produce, and which machine turns their products into more money. Buy animals at Marnie's Ranch; Robin builds and upgrades the coops and barns. Click a heading to open or fold it.</p>
   ${collapseAllBtn()}
   ${section("animals",`${ic("White Chicken")} Farm animals <span class="small muted">(${ANIMALS.length})</span>`,animals)}
-  ${section("machines",`${ic("Keg")} Machines & what they make <span class="small muted">(${MACHINES.length})</span>`,machines)}`;
+  ${section("machines",`${ic("Keg")} Machines <span class="small muted">(${MACHINES.length})</span>`,machines)}`;
 }
 
 // Sell price for the chosen quality and Tiller profession (quality first, then +10% Tiller, rounded down like the game)
@@ -573,17 +577,28 @@ function cropLock(c,day){
   if(c.shop==="cart")return "Traveling Cart only";
   return "";
 }
+// crop and fish cards fold open/closed: click the card (not its links or tick box); Expand all / Collapse all
+const cardShut=k=>k in (ui.cardOpen||{})?!ui.cardOpen[k]:!!ui.cardsShut;
+const cardFoldBtns=(cls="")=>`<div class="toolbar card-fold ${cls}"><button type="button" class="iconbtn small" data-cardall="open">▾ Expand all</button><button type="button" class="iconbtn small" data-cardall="close">▸ Collapse all</button></div>`;
 function renderCrops(){
   const s=ui.cSeason||st.season;
-  const rows=CROPS.filter(c=>c.s.includes(s)&&(ui.special||(c.seed!=null&&!cropLock(c,ui.plantDay)))).map(c=>({c,lock:cropLock(c,ui.plantDay),...cropCalc(c,s,ui.plantDay)}));
+  const rows=CROPS.filter(c=>c.s.includes(s)&&(ui.special||c.found||(c.seed!=null&&!cropLock(c,ui.plantDay)))).map(c=>({c,lock:cropLock(c,ui.plantDay),...cropCalc(c,s,ui.plantDay)}));
   const key={n:r=>r.c.n,seed:r=>r.c.seed||0,days:r=>cropDays(r.c),re:r=>r.c.re||0,sell:r=>sellPrice(r.c),single:r=>r.single,h:r=>r.h,profit:r=>r.profit,gpd:r=>r.gpd}[ui.cSort];
   // crops that earn nothing (0 gold/day: no harvest before the season ends) always go to the bottom, greyed out
   const dead=r=>r.gpd<=0;
   rows.sort((a,b)=>(dead(a)-dead(b))||(()=>{const x=key(a),y=key(b);return (typeof x==="string"?x.localeCompare(y):x-y)*ui.cDir;})());
   const th=(k,l,num)=>`<th class="${num?"num":""}${ui.cSort===k?" on":""}" data-csort="${k}">${l}${ui.cSort===k?(ui.cDir>0?" ▲":" ▼"):""}</th>`;
+  const cropHead=`<tr>${th("n","Crop")}<th>Seasons</th>${th("days","Grow",1)}${th("re","Regrow",1)}${th("sell","Sells",1)}${th("single","Profit (1)",1)}${th("h","Harvests",1)}${th("profit","Total profit",1)}${th("gpd","Gold/day",1)}<th>Notes</th></tr>`;
+  const cropRow=r=>`<tr data-card="c:${esc(r.c.n)}" class="${r.lock?"locked":""} ${dead(r)?"dead":""}${cardShut("c:"+r.c.n)?" shut":""}" ${dead(r)?`title="No harvest before the season ends if planted on ${cap(s)} ${ui.plantDay}"`:""}><td><div class="crop-cell"><i class="card-chev" aria-hidden="true">▾</i>${cropIcon(r.c)}<div><b class="item" data-search="${esc(cropName(r.c))}">${esc(cropName(r.c))}</b> ${wiki(cropName(r.c),"↗")}${r.lock?`<span class="crop-lock" title="You can't buy these seeds yet in Year ${st.year}">${r.lock}</span>`:""}
+        <div class="crop-seed" title="Seed price">${r.c.seed==null?(r.c.found?'<span class="muted" title="Seeds can\x27t be bought: you find them (artifact spots, mystery boxes…)">found seeds</span>':'<span class="muted">seed n/a</span>'):g(r.c.seed)}</div></div></div></td><td>${seasonPills(r.c.s)}</td>
+      <td class="num">${cropGrow(r.c)}</td>
+      <td class="num">${r.c.re?r.c.re+"d":"—"}</td><td class="num">${g(sellPrice(r.c))}${r.c.y?` <span class="muted">×${r.c.y}</span>`:""}</td>
+      <td class="num" title="Profit from one harvest: what it sells for, minus the seed" style="color:${r.single<0?"var(--love)":"inherit"}">${g(Math.round(r.single))}</td>
+      <td class="num" title="Harvests possible before the season ends">${r.h}</td><td class="num" style="color:${r.profit<0?"var(--love)":"inherit"}">${g(Math.round(r.profit))}</td>
+      <td class="num"><b>${r.gpd.toFixed(1)}</b></td><td class="small muted" style="white-space:normal;min-width:200px">${esc(r.c.note||"")}</td></tr>`;
   return `<h1>Crops</h1><p class="sub">Profit calculator: one tile, planted on the day you pick, replanted after each harvest (or left to regrow) until the season ends.</p>
   <div class="toolbar">
-    <div class="seg">${SEASONS.slice(0,3).map(x=>`<button class="${x===s?"on":""}" data-cs="${x}">${SICON[x]} ${cap(x)}</button>`).join("")}</div>
+    <div class="seg">${SEASONS.map(x=>`<button class="${x===s?"on":""}" data-cs="${x}">${SICON[x]} ${cap(x)}</button>`).join("")}</div>
     <span class="small">Plant on</span><div class="datewrap">
       <button type="button" class="iconbtn datebtn plantbtn" id="plantBtn" aria-haspopup="true" aria-expanded="false" title="Pick the day you plant">${SICON[s]}<span>${cap(s)} ${ui.plantDay}</span><i>▾</i></button>
       <div class="date-pop plant-pop" id="plantPop" role="dialog" aria-label="Pick the planting day">
@@ -593,17 +608,17 @@ function renderCrops(){
     <span class="small">Quality</span><div class="seg qseg" role="group" aria-label="Crop quality">${QUALITIES.map(([q,l,icon])=>`<button type="button" class="${ui.quality===q?"on":""}" data-quality="${q}" aria-pressed="${ui.quality===q}" title="${l}${q>1?` (×${q})`:""}">${icon?ic(icon):""}${l}</button>`).join("")}</div>
     <button type="button" class="iconbtn small tglbtn ${ui.tiller?"on":""}" data-tiller aria-pressed="${ui.tiller}" title="Tiller profession: crops sell for 10% more">${ic("Tiller")} Tiller +10%</button>    <label class="small"><input type="checkbox" id="special" ${ui.special?"checked":""}> Show crops you can't buy seeds for (yet)</label>
   </div>
-  ${s==="winter"?'<p class="muted">Nothing grows outdoors in winter except Winter Seeds (forage). Use the Greenhouse!</p>':""}
-  <div class="tablewrap"><table class="crops">
-    <tr>${th("n","Crop")}<th>Seasons</th>${th("days","Grow",1)}${th("re","Regrow",1)}${th("sell","Sells",1)}${th("single","Profit (1)",1)}${th("h","Harvests",1)}${th("profit","Total profit",1)}${th("gpd","Gold/day",1)}<th>Notes</th></tr>
-    ${rows.map(r=>`<tr class="${r.lock?"locked":""} ${dead(r)?"dead":""}" ${dead(r)?`title="No harvest before the season ends if planted on ${cap(s)} ${ui.plantDay}"`:""}><td><div class="crop-cell">${cropIcon(r.c)}<div><b class="item" data-search="${esc(cropName(r.c))}">${esc(cropName(r.c))}</b> ${wiki(cropName(r.c),"↗")}${r.lock?`<span class="crop-lock" title="You can't buy these seeds yet in Year ${st.year}">${r.lock}</span>`:""}
-        <div class="crop-seed" title="Seed price">${r.c.seed==null?'<span class="muted">seed n/a</span>':g(r.c.seed)}</div></div></div></td><td>${seasonPills(r.c.s)}</td>
-      <td class="num">${cropGrow(r.c)}</td>
-      <td class="num">${r.c.re?r.c.re+"d":"—"}</td><td class="num">${g(sellPrice(r.c))}${r.c.y?` <span class="muted">×${r.c.y}</span>`:""}</td>
-      <td class="num" title="Profit from one harvest: what it sells for, minus the seed" style="color:${r.single<0?"var(--love)":"inherit"}">${g(Math.round(r.single))}</td>
-      <td class="num" title="Harvests possible before the season ends">${r.h}</td><td class="num" style="color:${r.profit<0?"var(--love)":"inherit"}">${g(Math.round(r.profit))}</td>
-      <td class="num"><b>${r.gpd.toFixed(1)}</b></td><td class="small muted" style="white-space:normal;min-width:200px">${esc(r.c.note||"")}</td></tr>`).join("")}
-  </table></div>
+  ${cardFoldBtns()}
+  ${s==="winter"?'<p class="muted">Outdoors in winter only Powdermelon grows (plus Winter Seeds, which give forage). Everything else needs the Greenhouse.</p>':""}
+  ${rows.some(r=>r.c.found)?`<h2 class="found-h">${ic("Artifact Spot")} Crops from found seeds</h2><p class="small muted">You can't buy these seeds in shops: they come from artifact spots, mystery boxes, fishing treasure and the like. Profit counts the seeds as free.</p>
+  <div class="tablewrap"><table class="crops found">
+    ${cropHead}
+    ${rows.filter(r=>r.c.found).map(cropRow).join("")}
+  </table></div>`:""}
+  ${rows.some(r=>!r.c.found)?`${rows.some(r=>r.c.found)?`<h2 class="found-h">${ic("Parsnip Seeds")} Crops from shop seeds</h2>`:""}<div class="tablewrap"><table class="crops">
+    ${cropHead}
+    ${rows.filter(r=>!r.c.found).map(cropRow).join("")}
+  </table></div>`:""}
   <p class="small muted">The price under each crop's name is the seed price. “Seed n/a” means you can't buy it normally, so profit counts the seed as free. Profit (1) = one harvest's sale minus the seed. Yields above ×1 are averages.</p>`;
 }
 
@@ -616,21 +631,22 @@ function renderFish(){
   if(ui.fHide)list=list.filter(f=>!st.fish[f.n]);
   const key={n:f=>f.n,loc:f=>f.loc,p:f=>f.p}[ui.fSort];
   list.sort((a,b)=>{const x=key(a),y=key(b);return (typeof x==="string"?x.localeCompare(y):x-y)*ui.fDir;});
-  const th=(k,l,num)=>`<th class="${num?"num":""}" data-fsort="${k}">${l}${ui.fSort===k?(ui.fDir>0?" ▲":" ▼"):""}</th>`;
+  const th=(k,l,num)=>`<th class="${num?"num":""}${ui.fSort===k?" on":""}" data-fsort="${k}">${l}${ui.fSort===k?(ui.fDir>0?" ▲":" ▼"):""}</th>`;
   const caught=FISH.filter(f=>st.fish[f.n]).length;
-  return `<h1>Fish</h1><p class="sub">${caught} of ${FISH.length} caught. Tick the box when you catch one, and it's saved.</p>
+  return `<h1>Fish</h1><p class="sub">${caught} of ${FISH.length} caught. Caught fish fade out (they come from your connected farm).</p>
   <div class="toolbar">
     <div class="seg">${["all",...SEASONS].map(x=>`<button class="${x===s?"on":""}" data-fs="${x}">${x==="all"?"All":SICON[x]+" "+cap(x)}</button>`).join("")}</div>
     <select id="fLoc">${locs.map(l=>`<option value="${l}" ${ui.fLoc===l?"selected":""}>${l==="all"?"All locations":l}</option>`).join("")}</select>
     <select id="fWeather"><option value="all">Any weather</option><option value="sun" ${ui.fWeather==="sun"?"selected":""}>Sunny day</option><option value="rain" ${ui.fWeather==="rain"?"selected":""}>Rainy day</option></select>
     <label class="small"><input type="checkbox" id="fHide" ${ui.fHide?"checked":""}> Hide caught</label>
   </div>
-  <div class="tablewrap"><table>
+  ${cardFoldBtns("fish-fold")}
+  <div class="tablewrap"><table class="fishes">
     <tr><th>✓</th>${th("n","Fish")}${th("loc","Where")}<th>Seasons</th><th>Time</th><th>Weather</th>${th("p","Price",1)}<th>Bundles</th></tr>
-    ${list.map(f=>{const bs=BUNDLES.filter(b=>b.items.includes(f.n));return `<tr class="${st.fish[f.n]?"done":""}">
+    ${list.map(f=>{const bs=BUNDLES.filter(b=>b.items.includes(f.n));return `<tr data-card="f:${esc(f.n)}" class="${st.fish[f.n]?"done":""}${cardShut("f:"+f.n)?" shut":""}">
       <td><input type="checkbox" data-fish="${esc(f.n)}" ${st.fish[f.n]?"checked":""} style="accent-color:var(--accent);width:17px;height:17px"></td>
-      <td>${img(f.n)}<b class="item" data-search="${esc(f.n)}">${esc(f.n)}</b> ${f.leg?IC.star():""} ${wiki(f.n,"↗")}</td><td style="white-space:normal;min-width:160px">${esc(f.loc)}</td>
-      <td>${seasonPills(f.s)}</td><td>${esc(f.t)}</td><td>${f.w==="any"?"Any":f.w==="rain"?IC.rain()+" Rain":IC.sun()+" Sun"}</td>
+      <td><i class="card-chev" aria-hidden="true">▾</i>${img(f.n)}<b class="item" data-search="${esc(f.n)}">${esc(f.n)}</b> ${f.leg?IC.star():""} ${wiki(f.n,"↗")}</td><td style="white-space:normal;min-width:160px">${esc(f.loc)}</td>
+      <td>${seasonPills(f.s)}</td><td>${esc(f.t)}</td><td>${f.w==="any"?'<span class="wtxt">Any</span>':f.w==="rain"?IC.rain()+'<span class="wtxt"> Rain</span>':IC.sun()+'<span class="wtxt"> Sun</span>'}</td>
       <td class="num">${g(f.p)}</td><td>${bs.map(b=>pill(b.n,"ok")).join("")}</td></tr>`;}).join("")||'<tr><td colspan="8" class="muted">No fish match these filters.</td></tr>'}
   </table></div>
   ${list.some(f=>f.note)?`<p class="small muted">${IC.star()} Legendary fish: you can catch each one only once (unless you get the 1.6 Qi quest versions).</p>`:""}`;
@@ -675,13 +691,13 @@ function bundleCard(b){
 
 function renderFestivals(){
   return `<h1>Festivals & Events</h1><p class="sub">The shops close on festival days, and most festivals start when you arrive at the location.</p>
-  <div class="grid g3">${FESTIVALS.map(f=>{let dd=dayDiff(st.season,st.day,f.s,f.days[0]);if(dd<-(f.days.length-1))dd+=112;return `
-    <div class="card" id="fest-${esc(f.n.replace(/\W/g,""))}">
-      <div>${spill(f.s,f.days.join(", "))} ${!unlocked(f)?pill(lockReason(f)):dd<=0&&dd>-(f.days.length)?pill("Today!","love"):dd<=7?pill("in "+dd+"d","ok"):""}</div>
-      <h2 style="margin:6px 0 2px">${IC.fest(f.n)} ${esc(f.n)}</h2>
-      <div class="small muted">${IC.place()} ${esc(f.where)} · ${IC.time()} ${esc(f.t)}</div>
-      <p class="small" style="margin:8px 0 0">${esc(f.note)}</p>
-      <p class="small" style="margin:6px 0 0">${wiki(f.n)}</p></div>`;}).join("")}</div>`;
+  <div class="grid g3 fest-grid">${FESTIVALS.map(f=>{let dd=dayDiff(st.season,st.day,f.s,f.days[0]);if(dd<-(f.days.length-1))dd+=112;return `
+    <a class="card fest-card" id="fest-${esc(f.n.replace(/W/g,""))}" href="${wikiURL(f.n)}" target="_blank" rel="noopener" title="Open ${esc(f.n)} on the Stardew Valley Wiki">
+      <div class="fest-top"><span class="pill ${f.s} fest-date">${SICON[f.s]}<b>${f.days.join(", ")}</b></span>${!unlocked(f)?pill(lockReason(f)):dd<=0&&dd>-(f.days.length)?pill("Today!","love"):dd<=7?pill("in "+dd+"d","ok"):""}</div>
+      <h2 class="fest-name">${esc(f.n)}</h2>
+      <div class="fest-line">${IC.place()}<span>${esc(f.where)}</span></div>
+      <div class="fest-line">${IC.time()}<span>${esc(f.t)}</span></div>
+      <p class="fest-note">${esc(f.note)}</p></a>`;}).join("")}</div>`;
 }
 
 function renderSearch(){
@@ -766,8 +782,14 @@ $("importFile").addEventListener("change",e=>{const f=e.target.files[0];if(!f)re
 /* ================= EVENTS ================= */
 document.addEventListener("click",e=>{
   if(e.target.closest("a.wiki"))return;   // let wiki links open normally
+  const ca=e.target.closest("[data-cardall]");
+  if(ca){ui.cardsShut=ca.dataset.cardall==="close";ui.cardOpen={};document.querySelectorAll("tr[data-card]").forEach(t=>t.classList.toggle("shut",ui.cardsShut));return;}
+  const cd=e.target.closest("tr[data-card]");
+  if(cd&&getComputedStyle(cd).display==="grid"&&!e.target.closest("a,input,button,label,.item,select")){const k=cd.dataset.card,shut=!cd.classList.contains("shut");
+    ui.cardOpen=ui.cardOpen||{};ui.cardOpen[k]=!shut;cd.classList.toggle("shut",shut);return;}
   const ct=e.target.closest("[data-cat]");if(ct){e.stopPropagation();catModal(ct.dataset.cat,ct.dataset.catk);return;}
   const vr=e.target.closest("[data-vrom]");if(vr){const o=["all","rom","non"];ui.vRom=o[(o.indexOf(ui.vRom||"all")+1)%3];render();return;}
+  if(e.target.closest("[data-vreset]")){ui.vSort="hearts";ui.vRom="all";ui.vFind="";render();return;}
   const vs=e.target.closest("[data-vsort]");if(vs){ui.vSort=vs.dataset.vsort;render();return;}
   const vtb=e.target.closest("[data-vtab]");if(vtb){e.preventDefault();st.vTab=vtb.dataset.vtab;save();if(ui.vPage){go("villagers");}else render();return;}
   const bk=e.target.closest("[data-back]");if(bk){goBack(bk.dataset.back);return;}
