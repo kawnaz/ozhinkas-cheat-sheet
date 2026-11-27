@@ -659,10 +659,10 @@ function renderBundles(){
   const isDone=b=>b.items.filter(i=>st.bundles[b.n+"|"+i]).length>=(b.need||b.items.length);
   return `<h1>Community Center Bundles</h1><p class="sub">${bp.bundlesDone} of ${BUNDLES.length} bundles complete. This is the standard bundle set (not Remixed). Click a room to see its bundles.</p>
   ${collapseAllBtn()}
-  ${rooms.map(r=>{
+  <div class="rooms">${rooms.map(r=>{
     const list=BUNDLES.filter(b=>b.room===r), n=list.filter(isDone).length, all=n===list.length;
     return section("b:"+r,`<input type="checkbox" class="room-tick" data-roomtick="${esc(r)}" ${all?"checked":""} title="${all?"Untick to clear":"Tick to mark"} every bundle in the ${esc(r)}${r==="Vault"?" (this also counts the bus as repaired)":""}" aria-label="${esc(r)} complete"><b class="room-name">${esc(r)}</b><span class="room-rew">${ROOM_REWARD[r]?`Reward: <b>${esc(ROOM_REWARD[r])}</b>`:""}</span><span class="room-prog"><span class="bar room-bar"><i style="width:${n/list.length*100}%"></i></span><span class="room-count ${all?"all":""}">${n} / ${list.length} ${list.length===1?"bundle":"bundles"}</span></span>`,
-      `<div class="grid g3">${list.map(b=>bundleCard(b)).join("")}</div>`,"room"+(all?" room-done":""));}).join("")}`;
+      `<div class="grid g3">${list.map(b=>bundleCard(b)).join("")}</div>`,"room"+(all?" room-done":"")+(/joja/i.test(r)?" room-joja":""));}).join("")}</div>`;
 }
 function bundleCard(b){
     const need=b.need||b.items.length, have=b.items.filter(i=>st.bundles[b.n+"|"+i]).length, done=have>=need;

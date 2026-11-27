@@ -981,3 +981,19 @@ header::after{height:32px;background:var(--grass,linear-gradient(#3d8c3c,#3d8c3c
 .vcards .sr-more.m3{display:none}
 .vcards .sr-more.m4{display:inline;flex:none;margin:8px 0 0 4px}
 .vlist .sr-loves .gtile,.vlist .sr-loves .gtile.g4{max-width:160px}
+/* Bundles on phones: rooms two per row (an opened room takes the full width), just "x / n bundles", no bar.
+   The Joja Mart row stays exactly as it is, full width at the bottom. */
+@media (max-width:760px){
+  .rooms{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 8px;align-items:start}
+  .rooms>details.sec.room-joja,.rooms>details.sec[open]{grid-column:1/-1}
+  .rooms>details.sec.room:not(.room-joja):not([open]) .room-bar{display:none}
+  .rooms{align-items:stretch}
+  .rooms>details.sec.room:not(.room-joja):not([open])>summary{box-sizing:border-box;height:100%;grid-template-columns:auto minmax(0,1fr) auto;
+    grid-template-rows:auto 1fr auto;column-gap:6px;row-gap:4px;padding:10px;align-items:start}
+  .rooms>details.sec.room:not(.room-joja):not([open])>summary .room-tick{grid-column:1;grid-row:1;margin:1px 0 0}
+  .rooms>details.sec.room:not(.room-joja):not([open])>summary .room-name{grid-column:2;grid-row:1;white-space:normal;line-height:1.1;font-size:15px;overflow-wrap:anywhere}
+  .rooms>details.sec.room:not(.room-joja):not([open])>summary .sec-chev{grid-column:3;grid-row:1}
+  .rooms>details.sec.room:not(.room-joja):not([open])>summary .room-rew{grid-column:1/4;grid-row:2;font-size:12px;line-height:1.25;text-align:left;align-self:start}
+  .rooms>details.sec.room:not(.room-joja):not([open])>summary .room-prog{grid-column:1/4;grid-row:3;justify-content:flex-start}
+  .rooms>details.sec.room:not(.room-joja):not([open])>summary .room-count{min-width:0;font-size:13px}
+}
