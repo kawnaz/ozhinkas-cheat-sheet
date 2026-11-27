@@ -384,6 +384,8 @@ a.wiki:hover{background:var(--accent);color:var(--accent-ink)}
 .vp-wrap{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:18px;align-items:start}
 .vp-main{min-width:0}
 .vp-main>.vp-tabs{margin-bottom:14px}
+/* romance badge: outline heart = can be married (dating/married use in-game icons) */
+.rel-heart{color:var(--love);font-size:20px;line-height:1;font-weight:700;padding:0 2px}
 /* tabs + relationship hearts on one row (hearts wrap underneath on narrow screens) */
 .vp-top{display:flex;flex-wrap:wrap;align-items:center;gap:8px 18px;margin-bottom:14px}
 .vp-top>.vp-tabs{margin-bottom:0}

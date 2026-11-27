@@ -43,7 +43,6 @@ function imgFail(el){
   if(el.dataset.ini){const s=document.createElement("span");s.className="ini "+[...el.classList].filter(c=>c!=="ico").join(" ");s.textContent=el.dataset.ini;el.replaceWith(s);}
   else el.remove();
 }
-// Marriage candidate badge: the Mermaid's Pendant (the shell you propose with)
 // In-game season icons
 SEASONS.forEach(s=>SICON[s]=img(cap(s),"si"));
 // Small inline in-game icon (the site uses these instead of emoji)
@@ -56,7 +55,13 @@ const FEST_ICON={"Egg Festival":"Easter Egg",   // images/Easter_Egg.png: a pain
 const IC={bday:()=>ic("Gift Icon","Birthday"),fest:n=>FEST_ICON[n]?ic(FEST_ICON[n],n):ic("StatusFestival","Festival"),rain:()=>ic("StatusRain","Rain"),sun:()=>ic("StatusSun","Sun"),
   note:()=>ic("Quest","Note"),time:()=>ic("Time Icon","Time"),star:()=>ic("Gold Quality Icon","Legendary"),done:()=>ic("Junimo Icon","Complete"),
   place:()=>ic("Wood Sign","Where"),tip:()=>ic("Lost Book","Tip"),info:()=>ic("Magnifying Glass","More info")};
-const MARRY=()=>`<span title="Marriage candidate" style="display:inline-flex;vertical-align:middle">${img("Mermaid's Pendant","md")}</span>`;
+/* Romance badge for marriage candidates: ♡ = can be married, Bouquet = dating/engaged, Mermaid's Pendant = married.
+   Status comes from the connected farm (live.js); without one, only "married" (set by hand) is known. */
+const relStatus=name=>{const lf=typeof liveFriend==="function"?liveFriend(name):undefined,s=lf&&lf.status;
+  if(st.spouse===name||s==="Married")return "married";if(s==="Engaged")return "engaged";if(s==="Dating")return "dating";return "single";};
+const REL={single:["Can be married",null],dating:["Dating you","Bouquet"],engaged:["Engaged to you","Bouquet"],married:["Married to you","Mermaid's Pendant"]};
+const MARRY=name=>{const k=relStatus(name),[t,icon]=REL[k];
+  return `<span class="rel-badge ${k}" title="${t}" style="display:inline-flex;vertical-align:middle">${icon?img(icon,"md"):'<span class="rel-heart" aria-hidden="true">♡</span>'}</span>`;};
 const ipill=(name,c="")=>/^(All|Most) /.test(name)
   ? `<span class="pill ${c} cat catlink" data-cat="${esc(name)}" title="${esc(name)}">${esc(catLabel(name))}</span>`
   : `<span class="pill ${c} item" data-search="${esc(baseName(name))}">${img(name,"sm")}${esc(name)}</span>`;
@@ -293,7 +298,7 @@ function vblock(v,nameHTML){
   return `<div class="card sv-card vblock" data-villager="${esc(v.n)}" data-find="${esc((v.n+" "+v.home).toLowerCase())}" title="Open ${esc(v.n)}'s page">
       <div class="vb-head">
         ${img(v.n,"hd",true)}
-        <div class="vb-id"><div class="vname">${nameHTML||esc(v.n)} ${v.m?MARRY():""}</div>
+        <div class="vb-id"><div class="vname">${nameHTML||esc(v.n)} ${v.m?MARRY(v.n):""}</div>
           <div class="vb-bday" title="Birthday: ${cap(v.s)} ${v.d}">${SICON[v.s]} ${cap(v.s)} ${v.d}${dd===0?` <b class="soon">${IC.bday()} Today!</b>`:dd<=7?` <b class="soon">in ${dd}d</b>`:""}</div></div>
       </div>
       ${srLoves(v.loves)}
@@ -464,7 +469,7 @@ function renderVillagerPage(name){
       <div class="vp-facts">
         <div><span class="muted">Birthday</span><b>${SICON[v.s]} ${cap(v.s)} ${v.d}</b></div>
         <div><span class="muted">Lives at</span><b>${esc(v.home)}</b></div>
-        ${v.m?`<div><span class="muted">Romance</span><b>${MARRY()} Can be married</b></div>`:""}
+        ${v.m?`<div><span class="muted">Romance</span><b>${MARRY(v.n)} ${REL[relStatus(v.n)][0]}</b></div>`:""}
       </div>
       <div class="vp-loves"><span class="muted">Loves</span>${gtiles(v.loves)}</div>
     </aside>
@@ -689,7 +694,7 @@ function renderSearch(){
   const locFish=FISH.filter(f=>f.loc.toLowerCase().includes(q)&&!f.n.toLowerCase().includes(q));
   if(!vil.length&&!items.length&&!fests.length&&!locFish.length)return `${backBtn(view)}<h1>No results for “${esc(query)}”</h1><p class="sub">Try a shorter word, e.g. “pump” or “bass”.</p>`;
   let h=`<div class="res">${backBtn(view)}<h1>Results for “${esc(query)}”</h1>`;
-  if(vil.length)h+=`<h3>Villagers</h3><div class="grid g3">${vil.map(v=>`<div class="card click sv-card" data-villager="${esc(v.n)}"><div class="vhead">${img(v.n,"lg",true)}<div><h2 style="margin:0">${hl(v.n)} ${v.m?MARRY():""}</h2><div class="small muted">${SICON[v.s]} ${cap(v.s)} ${v.d} · ${esc(v.home)}</div></div></div>${srLoves(v.loves)}</div>`).join("")}</div>`;
+  if(vil.length)h+=`<h3>Villagers</h3><div class="grid g3">${vil.map(v=>`<div class="card click sv-card" data-villager="${esc(v.n)}"><div class="vhead">${img(v.n,"lg",true)}<div><h2 style="margin:0">${hl(v.n)} ${v.m?MARRY(v.n):""}</h2><div class="small muted">${SICON[v.s]} ${cap(v.s)} ${v.d} · ${esc(v.home)}</div></div></div>${srLoves(v.loves)}</div>`).join("")}</div>`;
   if(items.length)h+=`<h3>Items</h3><div class="grid g2">${items.slice(0,40).map(x=>itemCard(x,hl)).join("")}</div>`;
   if(fests.length)h+=`<h3>Festivals</h3><div class="grid g3">${fests.map(f=>`<div class="card click" data-fest="${esc(f.n)}"><h2 style="margin:0">${hl(f.n)}</h2><div class="small muted">${SICON[f.s]} ${cap(f.s)} ${f.days.join(", ")} · ${esc(f.where)}</div></div>`).join("")}</div>`;
   if(locFish.length)h+=`<h3>Fish found at “${esc(query)}”</h3><div>${locFish.map(f=>`<span class="pill item" data-search="${esc(f.n)}">${esc(f.n)}</span>`).join("")}</div>`;
