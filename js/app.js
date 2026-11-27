@@ -773,8 +773,6 @@ document.addEventListener("click",e=>{
   // date picker
   if(e.target.closest("#dateBtn")){toggleDatePop();return;}
   // next day: Winter 28 rolls over to Spring 1 of the next year
-  if(e.target.closest("#nextDay")){toggleDatePop(false);let d=st.day+1,si=SEASONS.indexOf(st.season);
-    if(d>28){d=1;si++;if(si>3){si=0;st.year=(st.year||1)+1;}}const y=scrollY;setDate(SEASONS[si],d);scrollTo(0,y);return;}
   const yb=e.target.closest("[data-yr]");
   if(yb){st.year=Math.max(1,(st.year||1)+ +yb.dataset.yr);save();syncHeader();const y=scrollY;render();scrollTo(0,y);return;}
   const pk=e.target.closest("[data-pick]");
