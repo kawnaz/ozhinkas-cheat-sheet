@@ -36,8 +36,9 @@ async function liveLoad(){
   try{
     const r=await fetch(LIVE_API+st.farmCode,{cache:"no-store"});const j=await r.json();
     if(!r.ok)throw new Error(j.error||("error "+r.status));
+    const fresh=!live.snap||j.updatedAt!==live.updatedAt;
     live.snap=j.snapshot;live.updatedAt=j.updatedAt;live.error=null;
-    applyLive(live.snap);save();syncHeader();render();
+    if(fresh){applyLive(live.snap);save();syncHeader();render();}
   }catch(e){live.error=e.message;}
   live.loading=false;liveBadge();
   if($("modal").classList.contains("open")&&$("farmBox"))farmMenu();
@@ -45,7 +46,7 @@ async function liveLoad(){
 
 function liveConnect(code){
   if(!st.manual)st.manual={season:st.season,day:st.day,year:st.year,fish:st.fish,bundles:st.bundles,spouse:st.spouse??null,busOK:st.busOK??null};
-  st.farmCode=code;delete st.farmerId;save();liveLoad();
+  st.farmCode=code;delete st.farmerId;live.snap=null;save();liveLoad();
 }
 function liveDisconnect(){
   if(st.manual)Object.assign(st,st.manual);
@@ -99,3 +100,13 @@ function farmMenu(){
 // Start: a link like index.html?farm=CODE connects straight away (handy on a phone)
 (()=>{const p=liveCode(new URLSearchParams(location.search).get("farm"));if(p&&p!==st.farmCode)liveConnect(p);else liveLoad();})();
 document.addEventListener("visibilitychange",()=>{if(!document.hidden)liveLoad();});
+// Every 15 seconds while the page is on screen, ask the server only "when was the last upload?".
+// If the mod has sent a new night since, load the full farm data and redraw.
+async function liveStamp(){
+  if(document.hidden||!st.farmCode||live.loading||!live.snap)return;
+  try{
+    const r=await fetch(LIVE_API+st.farmCode+"/stamp",{cache:"no-store"});if(!r.ok)return;
+    const j=await r.json();if(j.updatedAt&&j.updatedAt!==live.updatedAt)liveLoad();
+  }catch(e){}
+}
+setInterval(liveStamp,15000);
