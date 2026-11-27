@@ -67,6 +67,17 @@ const MARRY=name=>{const k=relStatus(name),[t,icon]=REL[k];
 const heartMax=name=>{const k=relStatus(name),v=VILLAGERS.find(x=>x.n===name);return k==="married"?14:k!=="single"||!(v&&v.m)?10:8;};
 const heartCount=name=>{const lf=typeof liveFriend==="function"?liveFriend(name):undefined,max=heartMax(name);
   return lf!==undefined?(lf?Math.min(max,Math.floor(lf.points/250)):0):Math.min(max,(st.hearts&&st.hearts[name])||0);};
+// friendship points for sorting: the game's exact points when a farm is connected, else hand-set hearts × 250
+const heartPoints=name=>{const lf=typeof liveFriend==="function"?liveFriend(name):undefined;return lf!==undefined?(lf?lf.points:-1):heartCount(name)*250;};
+// a full row of hearts (filled up to the current level) for wide Town lists
+// always 10 slots (14 when married); hearts above the current limit (9-10 before a Bouquet) are shown locked
+/* pixel heart like the game's Social tab: hollow outline = empty, red = earned, solid brown = locked (needs a Bouquet) */
+// the game's HeartIconLarge, pixel for pixel: O = outline, r = red fill, h = light highlight
+const HEART_SVG=(()=>{const P=[".OO.OO.","OrhOrhO","OrrrrrO",".OrrrO.","..OrO..","...O..."],g={O:"",r:"",h:""};
+  P.forEach((row,y)=>[...row].forEach((c,x)=>{if(g[c]!=null)g[c]+=`<rect x="${x}" y="${y}" width="1" height="1"/>`;}));
+  return `<g class="o">${g.O}</g><g class="f">${g.r}</g><g class="h">${g.h}</g>`;})();
+const heartPix=st=>`<svg class="hpx ${st}" viewBox="0 0 7 6" shape-rendering="crispEdges" aria-hidden="true">${HEART_SVG}</svg>`;
+const HEARTROW=name=>{const n=heartCount(name),m=heartMax(name),all=m>10?14:10;return `<span class="heart-row${all>10?" m14":""}" title="${n} of ${m} hearts${m<all?` (hearts ${m+1}-${all} unlock with a Bouquet)`:""}">${Array.from({length:all},(_,i)=>heartPix(i<n?"on":i>=m?"locked":"empty")).join("")}</span>`;};
 const HEARTTAG=name=>{const n=heartCount(name),m=heartMax(name);return `<span class="heart-tag${n?"":" zero"}" title="${n} of ${m} hearts">${n}/${m}${ic("HeartIconLarge")}</span>`;};
 const ipill=(name,c="")=>/^(All|Most) /.test(name)
   ? `<span class="pill ${c} cat catlink" data-cat="${esc(name)}" title="${esc(name)}">${esc(catLabel(name))}</span>`
@@ -194,9 +205,13 @@ function render(){
   const m=$("main");
   if(query){m.innerHTML=renderSearch();labelTables(m);coinify(m);renderRails();renderHeaderDeco();return;}
   m.innerHTML=({calendar:renderCalendar,villagers:renderVillagers,crops:renderCrops,animals:renderAnimals,fish:renderFish,bundles:renderBundles,festivals:renderFestivals})[view]();
-  labelTables(m);coinify(m);applyVFind();
+  labelTables(m);coinify(m);applyVFind();vFit();
   renderRails();renderHeaderDeco();
 }
+// Town tab: a table when there's room for each villager's gifts on one line, otherwise villager boxes (like before)
+const VFIT=760,vRO=new ResizeObserver(()=>vFit());
+function vFit(){const b=document.querySelector(".vblocks[data-vfit]");if(!b)return;vRO.observe(b);
+  const boxes=b.clientWidth<VFIT;if(b.classList.contains("vcards")===boxes)return;b.classList.toggle("vlist",!boxes);b.classList.toggle("vcards",boxes);}
 // Town tab: hide villager cards that don't match the "Find a villager" box (by name or home)
 function applyVFind(){if(query)return;const q=(ui.vFind||"").trim().toLowerCase(),cards=document.querySelectorAll(".vblock[data-find]");if(!cards.length)return;
   let n=0;cards.forEach(c=>{const ok=!q||c.dataset.find.includes(q);c.hidden=!ok;if(ok)n++;});
@@ -262,14 +277,19 @@ const VSORTS={
   cal:["Birthday (Spring 1 → Winter 28)",(a,b)=>bdayNum(a)-bdayNum(b)],
   name:["Name (A–Z)",(a,b)=>a.n.localeCompare(b.n)],
   namez:["Name (Z–A)",(a,b)=>b.n.localeCompare(a.n)],
-  marry:["Marriage candidates first",(a,b)=>(b.m?1:0)-(a.m?1:0)],
+  hearts:["Most friendship points",(a,b)=>heartPoints(b.n)-heartPoints(a.n)],
+  heartsz:["Fewest friendship points",(a,b)=>heartPoints(a.n)-heartPoints(b.n)],
 };
+// column headers on the Town list: [label, first click, second click, true if the first click is biggest-first]
+const VCOLS=[["Villager","name","namez"],["Birthday","next","cal"],["Loved gifts"],["Hearts","hearts","heartsz",true]];
 // days until a villager's next birthday (0 = today)
 const soon=v=>{let dd=dayDiff(st.season,st.day,v.s,v.d);if(dd<0)dd+=112;return dd;};
 // a villager's first 4 loves in one row (items before categories), then a small "+N" if there are more
-function srLoves(loves){
+// fit3: the Town list shows 3 gifts on narrower screens, so it also carries a "+N" for that case (CSS picks one)
+function srLoves(loves,fit3){
   const isCat=n=>/^(All|Most) /.test(n),list=[...loves.filter(n=>!isCat(n)),...loves.filter(isCat)],more=list.length-4;
-  return `<div class="gtiles sr-loves">${list.slice(0,4).map(n=>gtile(n,true)).join("")}${more>0?`<span class="sr-more" title="${more} more: ${esc(list.slice(4).join(", "))}">+${more}</span>`:""}</div>`;
+  const moreTag=(k,c)=>`<span class="sr-more${c}" title="${k} more: ${esc(list.slice(list.length-k).join(", "))}">+${k}</span>`;
+  return `<div class="gtiles sr-loves">${list.slice(0,4).map((n,i)=>i===3&&fit3?gtile(n,true).replace("class=\"gtile","class=\"gtile g4"):gtile(n,true)).join("")}${more>0?moreTag(more," m4"):""}${fit3&&list.length>3?moreTag(list.length-3," m3"):""}</div>`;
 }
 // villager card on the Town tab: [portrait] [name + birthday] on top, favourite gifts underneath
 function vblock(v,nameHTML){
@@ -277,12 +297,17 @@ function vblock(v,nameHTML){
   return `<div class="card sv-card vblock" data-villager="${esc(v.n)}" data-find="${esc((v.n+" "+v.home).toLowerCase())}" title="Open ${esc(v.n)}'s page">
       <div class="vb-head">
         ${img(v.n,"hd",true)}
-        <div class="vb-id"><div class="vname">${nameHTML||esc(v.n)} ${v.m?MARRY(v.n):""}${HEARTTAG(v.n)}</div>
-          <div class="vb-bday" title="Birthday: ${cap(v.s)} ${v.d}">${SICON[v.s]} ${cap(v.s)} ${v.d}${dd===0?` <b class="soon">${IC.bday()} Today!</b>`:dd<=7?` <b class="soon">in ${dd}d</b>`:""}</div></div>
+        <div class="vb-id"><div class="vname"><span class="vn-txt">${nameHTML||esc(v.n)}</span><span class="vn-badge">${v.m?MARRY(v.n):""}</span></div></div>
       </div>
-      ${srLoves(v.loves)}
+      <div class="vb-bday${dd===0?" today":""}" title="Birthday: ${cap(v.s)} ${v.d}${dd===0?" (today!)":" (in "+dd+" days)"}">${SICON[v.s]} <span class="vb-sn">${cap(v.s)} </span>${v.d}${dd>0&&dd<=7?` <b class="soon">in ${dd}d</b>`:dd===0?` <b class="soon">Today!</b>`:""}</div>
+      ${srLoves(v.loves,true)}
+      <div class="vb-hearts">${HEARTROW(v.n)}${HEARTTAG(v.n)}</div>
     </div>`;
 }
+// one square button that cycles All -> Romance -> Non-romance (heart = everyone, Bouquet = can marry, grey Bouquet = can't)
+const VROM={all:["All villagers",()=>ic("HeartIconLarge")],rom:["Only romance (marriage candidates)",()=>img("Bouquet","ii")],non:["Only non-romance",()=>`<span class="vrom-off">${img("Bouquet","ii")}</span>`]};
+const VROMBTN=()=>{const k=ui.vRom||"all",o=["all","rom","non"],nx=o[(o.indexOf(k)+1)%3];
+  return `<button type="button" class="iconbtn vrom ${k}" data-vrom title="Showing: ${VROM[k][0]}. Click for: ${VROM[nx][0]}" aria-label="Showing ${VROM[k][0]}, click to change">${VROM[k][1]()}</button>`;};
 function renderVillagers(){
   const list=[...VILLAGERS];
   if(!VSORTS[ui.vSort])ui.vSort="next";
@@ -292,9 +317,10 @@ function renderVillagers(){
   return `<h1>Town</h1>${vtabs}<p class="sub">Birthdays and favourite gifts for every villager.</p>
   <div class="toolbar">
     <input type="search" id="vFind" class="vfind" placeholder="Find a villager…" value="${esc(ui.vFind||"")}" autocomplete="off" aria-label="Find a villager">
-    <label class="small">Sort by <select id="vSort">${ui.vSort==="next"?`<option value="next" selected disabled hidden>Next birthday</option>`:""}${Object.entries(VSORTS).filter(([k])=>k!=="next").map(([k,[l]])=>`<option value="${k}" ${ui.vSort===k?"selected":""}>${l}</option>`).join("")}</select></label>
-    <button class="iconbtn small" id="vSortReset" ${ui.vSort==="next"?"disabled":""} title="Back to the default order: next birthday first">↺ Reset</button></div>
-  <div class="vblocks">${list.sort((a,b)=>VSORTS[ui.vSort][1](a,b,soon)||a.n.localeCompare(b.n)).map(v=>vblock(v)).join("")}</div>
+    ${VROMBTN()}
+</div>
+  <div class="vblocks vlist" data-vfit><div class="vlist-head" role="row">${VCOLS.map(([l,a,b,desc])=>{const on=ui.vSort===a||ui.vSort===b;
+    return a?`<button type="button" class="vh ${on?"on":""}" data-vsort="${on&&ui.vSort===a?b:a}" title="Sort: ${esc(VSORTS[on&&ui.vSort===a?b:a][0])}">${l}${on?`<i>${(ui.vSort===a)!==!!desc?"▲":"▼"}</i>`:""}</button>`:`<span class="vh">${l}</span>`;}).join("")}</div>${list.filter(v=>ui.vRom==="rom"?v.m:ui.vRom==="non"?!v.m:true).sort((a,b)=>VSORTS[ui.vSort][1](a,b,soon)||a.n.localeCompare(b.n)).map(v=>vblock(v)).join("")}</div>
   <p class="muted vfind-none" hidden>No villager by that name.</p>
   <p class="small muted">Click a villager to open their page: all their gifts, where they usually are, and their heart events.</p>`;
 }
@@ -352,60 +378,56 @@ function altOK(c,S){
   if(c.ev&&!S.ev[c.ev])return false;
   return true;
 }
-// what the controls are set to; opens on today's date for each villager
-function schedState(v){
-  const u=ui.sch||(ui.sch={h:{},ev:{}});
-  // rain is random, so it starts unticked for every villager and every new day
-  if(u.v!==v.n){u.v=v.n;u.season=st.season;u.pick="today";u.rain=false;}
-  if(u.pick==="today"&&u.season!==st.season)u.pick="other";
-  // the bus stays repaired for good once the Vault is done (or once ticked); the spouse is saved with your progress
-  const today=u.pick==="today";
-  return {season:u.season,today,day:today?st.day:null,wd:today?weekday(st.day):u.pick==="other"?-1:+u.pick,rain:!!u.rain,
-    cc:u.cc??ccDone(),bus:busOpen(),bridge:u.bridge??true,
-    rail:u.rail??!(st.year===1&&(st.season==="spring"||(st.season==="summer"&&st.day<3))),
-    h:u.h,ev:u.ev,married:st.spouse===v.n};
+/* Schedule tab: just today's and tomorrow's schedule, worked out automatically:
+   rain from the game's weather (today) and TV forecast (tomorrow), Community Center / bus from the bundles,
+   hearts and marriage from your farm. Without a connected farm the weather is unknown, so dry days are shown. */
+const RAINY=id=>/^(Rain|Storm|GreenRain)$/.test(id||"");
+function schedDay(v,season,day,year,rain){
+  return {season,today:true,day,wd:weekday(day),rain,cc:ccDone(),bus:busOpen(),bridge:true,
+    rail:!(year===1&&(season==="spring"||(season==="summer"&&day<3))),
+    h:new Proxy({},{get:(_,n)=>typeof n==="string"&&heartCount(n)>=6}),ev:{},married:relStatus(v.n)==="married"};
 }
-const schedLabel=(e,s)=>e.labels.map(l=>/^\d/.test(l)?`${cap(s)} ${l}`:l).join(" or ");
 const schedTable=rows=>`<table class="vp-sched">${rows.map(([t,w])=>`<tr><td class="num">${esc(t)}</td><td>${esc(w)}</td></tr>`).join("")}</table>`;
+// what changed this day's routine from a normal one (rain, Community Center, bus...), from the matching wiki condition
+function schedMods(hits,S,season,wid){
+  const m=[],add=(k,html)=>{if(!m.some(x=>x[0]===k))m.push([k,html]);};
+  if(S.married)add("married",`${img("Mermaid's Pendant","ii")} Married to you`);
+  hits.forEach(e=>{const c=e.alts.find(x=>altOK(x,S));if(!c)return;
+    if(c.rain)add("rain",`${img(wxIcon(wid||"Rain",season),"wx-i")} ${esc(wxName(wid||"Rain"))}`);
+    if(c.dates)add("date",`${IC.time()} Special date`);
+    if(c.cc!=null)add("cc",`${IC.done()} Community Center ${c.cc?"restored":"not restored yet"}`);
+    if(c.bus!=null)add("bus",`${ic("Bus")} Bus ${c.bus?"repaired":"not repaired yet"}`);
+    if(c.bridge)add("bridge","Beach bridge repaired");
+    if(c.rail)add("rail","Railroad open");
+    (c.hAny||[]).length&&add("hany",`${ic("HeartIconLarge")} 6+ hearts with ${esc(c.hAny.join(" or "))}`);
+    (c.hNone||[]).length&&add("hnone",`${ic("HeartIconLarge")} Under 6 hearts with ${esc(c.hNone.join(" or "))}`);});
+  return m.map(x=>`<span class="sch-mod">${x[1]}</span>`).join("");
+}
+function schedCard(v,all,season,day,year,wid){
+  const S=schedDay(v,season,day,year,RAINY(wid));
+  const pool=all.filter(e=>entryInSeason(e,season)&&(e.code==="M")===S.married);
+  const hits=[];const first=pool.find(e=>e.alts.some(c=>altOK(c,S)));
+  if(first){hits.push(first);if(first.alts.some(c=>c.opt))pool.forEach(e=>{if(e!==first&&e.alts.some(c=>c.opt&&altOK(c,S)))hits.push(e);});}
+  const fest=FESTIVALS.find(x=>x.s===season&&x.days.includes(day)&&unlocked(x));
+  const mods=schedMods(hits,S,season,wid)+(fest?`<span class="sch-mod">${IC.fest(fest.n)} ${esc(fest.n)}: festivals change everyone's day</span>`:"");
+  const result=hits.length>1
+    ?`<p class="small muted sch-rand">${hits.length} possible routines: the game picks one at random each morning.</p><div class="sch-opts">${hits.map((e,i)=>`<div class="sch-optbox"><div class="sch-opthead"><b>Option ${i+1}</b></div>${schedTable(e.rows)}</div>`).join("")}</div>`
+    :hits.length?`<div class="sch-one">${schedTable(hits[0].rows)}</div>`
+    :`<p>${S.married?"Spends the day on the farm, following the usual spouse routine.":"No listed schedule fits this day."}</p>`;
+  return `<div class="card sv-card vp-card">${mods?`<div class="sch-mods">${mods}</div>`:""}${result}</div>`;
+}
 function schedTab(v,info){
   const all=schedEntries(v.n);
   if(!all.length)return `<div class="card sv-card vp-card"><p class="muted">No schedule found.</p><p class="small">${wikiAt(v.n,"Schedule","Schedule on the wiki ↗")}</p></div>`;
-  const S=schedState(v),s=S.season;
-  const seasonAll=all.filter(e=>entryInSeason(e,s));
-  const pool=seasonAll.filter(e=>(e.code==="M")===S.married);
-  const hits=[];const first=pool.find(e=>e.alts.some(c=>altOK(c,S)));
-  if(first){hits.push(first);if(first.alts.some(c=>c.opt))pool.forEach(e=>{if(e!==first&&e.alts.some(c=>c.opt&&altOK(c,S)))hits.push(e);});}
-  // controls: season tabs, then the days that differ, then checkboxes for whatever this villager's schedule depends on
-  const wds=new Set(),need={};
-  seasonAll.forEach(e=>e.alts.forEach(c=>{if(c.special)return;if(!c.dates&&c.days)c.days.forEach(d=>wds.add(d));
-    ["rain","cc","bus","bridge","rail"].forEach(k=>{if(c[k]!=null)need[k]=1;});
-    (c.hNone||[]).concat(c.hAny||[]).forEach(n=>need["h:"+n]=1);if(c.ev)need["ev:"+c.ev]=1;}));
-  const u=ui.sch,pick=S.today?"today":u.pick;
-  const chip=(k,l)=>`<button type="button" class="${pick===k?"on":""}" data-sd="${k}">${l}</button>`;
-  const chips=(s===st.season?chip("today",`Today · ${WDAYS[weekday(st.day)].slice(0,3)} ${st.day}`):"")
-    +[...wds].sort().map(d=>chip(String(d),WDAYS[d])).join("")+(wds.size<7?chip("other",wds.size?"Other days":"Any day"):"");
-  const chk=(k,l,on)=>`<label class="sch-chk"><input type="checkbox" data-sf="${esc(k)}" ${on?"checked":""}> ${esc(l)}</label>`;
-  const checks=[need.rain&&chk("rain","Raining",S.rain),need.cc&&chk("cc","Community Center restored",S.cc),need.bus&&chk("bus","Bus repaired",S.bus),
-    need.bridge&&chk("bridge","Beach bridge repaired",S.bridge),need.rail&&chk("rail","Railroad open",S.rail),
-    ...Object.keys(need).filter(k=>k.startsWith("h:")).map(k=>chk(k,`6+ hearts with ${k.slice(2)}`,S.h[k.slice(2)])),
-    ...Object.keys(need).filter(k=>k.startsWith("ev:")).map(k=>{const [w,n]=k.slice(3).split("|");return chk(k,`Seen ${w}'s ${n}-heart event`,S.ev[k.slice(3)]);}),
-    v.m&&(!st.spouse||st.spouse===v.n)&&chk("married","Married to you",S.married)].filter(Boolean).join("");
-  const when=S.today?`Today, ${cap(s)} ${st.day} (${WDAYS[S.wd]})`:S.wd>=0?`${WDAYS[S.wd]}s in ${cap(s)}`:`A normal day in ${cap(s)}`;
-  const result=hits.length?hits.map((e,i)=>`${hits.length>1?`<h3 class="sch-opt">Option ${i+1}</h3>`:""}${schedTable(e.rows)}<p class="small muted sch-why">Wiki schedule: ${esc(schedLabel(e,s))}</p>`).join("")
-    +(hits.length>1?`<p class="small muted">They pick one of these at random.</p>`:"")
-    :`<p>${S.married?"Spends the day on the farm, following the usual spouse routine.":"No listed schedule fits these settings."}</p>`;
-  const dated=pool.filter(e=>e.dated);
-  const list=es=>es.map(e=>`<div class="sch-item"><b>${esc(schedLabel(e,s))}</b>${schedTable(e.rows)}</div>`).join("");
-  // left: [Season] row and [Day] row; right: the condition ticks stacked in boxes
-  return `<div class="sch-ctl"><div class="sch-pick">
-      <div class="sch-row"><span class="sch-lbl">Season</span><div class="seg sch-seasons" role="tablist">${SEASONS.map(x=>`<button type="button" role="tab" class="${x===s?"on":""}" data-ss="${x}">${SICON[x]} ${cap(x)}</button>`).join("")}</div></div>
-      <div class="sch-row"><span class="sch-lbl">Day</span><div class="seg sch-days">${chips}</div></div>
-    </div>${checks?`<div class="sch-checks">${checks}</div>`:""}</div>
-  <div class="card sv-card vp-card"><h2>${esc(when)}${S.rain?" · rain":""}</h2>${result}</div>
-  ${dated.length?section("sch:dates",`Special dates in ${cap(s)} (${dated.length})`,list(dated)):""}
-  ${section("sch:all",`Every ${cap(s)} schedule, in the order the game checks them (${pool.length})`,`<p class="small muted">The first one that fits the day is used.</p>${list(pool)}`)}
+  const w=typeof liveWeather==="function"?liveWeather():null;
+  let td=st.day+1,ts=st.season,ty=st.year||1;
+  if(td>28){td=1;const i=SEASONS.indexOf(ts)+1;ts=SEASONS[i%4];if(i>3)ty++;}
+  const tmr=ui.schDay==="tomorrow";
+  return `<div class="seg sch-when" role="tablist">${[["today","Today"],["tomorrow","Tomorrow"]].map(([k,l])=>`<button type="button" role="tab" class="${(k==="tomorrow")===tmr?"on":""}" data-schday="${k}">${l}</button>`).join("")}</div>
+  ${tmr?schedCard(v,all,ts,td,ty,w&&w.tomorrow):schedCard(v,all,st.season,st.day,st.year||1,w&&w.today)}
+  ${w?"":`<p class="small muted">Connect your farm to include rain: without it, dry-day schedules are shown.</p>`}
   ${info.note?`<p class="small">${IC.note()} ${esc(info.note)}</p>`:""}
-  <p class="small muted">Festivals change everyone's day. ${wikiAt(v.n,"Schedule","Full schedule on the wiki ↗")}</p>`;
+  <p class="small muted">${wikiAt(v.n,"Schedule","Full schedule on the wiki ↗")}</p>`;
 }
 /* Relationship hearts on a villager's page: from the game when a farm is connected (live.js), otherwise set by clicking */
 function relHTML(name){
@@ -746,12 +768,12 @@ $("importFile").addEventListener("change",e=>{const f=e.target.files[0];if(!f)re
 document.addEventListener("click",e=>{
   if(e.target.closest("a.wiki"))return;   // let wiki links open normally
   const ct=e.target.closest("[data-cat]");if(ct){e.stopPropagation();catModal(ct.dataset.cat,ct.dataset.catk);return;}
-  if(e.target.closest("#vSortReset")){ui.vSort="next";render();return;}
+  const vr=e.target.closest("[data-vrom]");if(vr){const o=["all","rom","non"];ui.vRom=o[(o.indexOf(ui.vRom||"all")+1)%3];render();return;}
+  const vs=e.target.closest("[data-vsort]");if(vs){ui.vSort=vs.dataset.vsort;render();return;}
   const vtb=e.target.closest("[data-vtab]");if(vtb){e.preventDefault();st.vTab=vtb.dataset.vtab;save();if(ui.vPage){go("villagers");}else render();return;}
   const bk=e.target.closest("[data-back]");if(bk){goBack(bk.dataset.back);return;}
-  const ss=e.target.closest("[data-ss]");if(ss&&ui.sch){ui.sch.season=ss.dataset.ss;ui.sch.pick=ui.sch.season===st.season?"today":"other";const y=scrollY;render();scrollTo(0,y);return;}
-  const sd=e.target.closest("[data-sd]");if(sd&&ui.sch){ui.sch.pick=sd.dataset.sd;const y=scrollY;render();scrollTo(0,y);return;}
   const hrt=e.target.closest("[data-heart]");if(hrt){const [hn,hl]=hrt.dataset.heart.split("|");st.hearts=st.hearts||{};st.hearts[hn]=st.hearts[hn]===+hl?+hl-1:+hl;save();const y=scrollY;render();scrollTo(0,y);return;}
+  const sdy=e.target.closest("[data-schday]");if(sdy){ui.schDay=sdy.dataset.schday;const y=scrollY;render();scrollTo(0,y);return;}
   const vpt=e.target.closest("[data-vptab]");if(vpt){st.vpTab=vpt.dataset.vptab;save();const y=scrollY;render();scrollTo(0,y);return;}
   // planting-day calendar (Crops tab)
   if(e.target.closest("#plantBtn")){const p=$("plantPop"),o=!p.classList.contains("open");p.classList.toggle("open",o);$("plantBtn").setAttribute("aria-expanded",o);return;}
@@ -798,12 +820,6 @@ document.addEventListener("click",e=>{
 });
 document.addEventListener("change",e=>{
   const t=e.target,d=t.dataset;
-  if(d.sf&&ui.sch){const k=d.sf,u=ui.sch;
-    if(k.startsWith("h:"))u.h[k.slice(2)]=t.checked;else if(k.startsWith("ev:"))u.ev[k.slice(3)]=t.checked;
-    else if(k==="bus"){st.busOK=t.checked;save();}
-    else if(k==="married"){st.spouse=t.checked?u.v:null;save();}
-    else u[k]=t.checked;
-    const y=scrollY;render();scrollTo(0,y);return;}
   if(d.fish){if(t.checked)st.fish[d.fish]=1;else delete st.fish[d.fish];save();render();}
   else if(d.bundle){if(t.checked)st.bundles[d.bundle]=1;else delete st.bundles[d.bundle];save();const y=scrollY;render();scrollTo(0,y);}
   else if(d.roomtick){
@@ -815,7 +831,7 @@ document.addEventListener("change",e=>{
     });
     save();const y=scrollY;render();scrollTo(0,y);}
   else if(t.id==="special"){ui.special=t.checked;render();}
-  else if(t.id==="vSort"){ui.vSort=t.value;render();}
+
   else if(t.id==="fLoc"){ui.fLoc=t.value;render();}
   else if(t.id==="fWeather"){ui.fWeather=t.value;render();}
   else if(t.id==="fHide"){ui.fHide=t.checked;render();}
@@ -852,24 +868,27 @@ function vineSVG(season){const [st0,lf,ld,fl,fc]=SEASON_COL[season];let r="";
   r+=R1(10,1,3,2,lf)+R1(13,2,1,1,ld)+R1(3,9,3,2,lf)+R1(2,10,1,1,ld)+R1(12,24,3,2,lf)+R1(15,25,1,1,ld); // leaves
   r+=R1(4,16,1,1,fl)+R1(2,16,1,1,fl)+R1(3,15,1,1,fl)+R1(3,17,1,1,fl)+R1(3,16,1,1,fc)+R1(5,16,2,1,st0); // flower / berry on a twig
   return svgURL(`<svg xmlns="http://www.w3.org/2000/svg" width="16" height="32" shape-rendering="crispEdges">${r}</svg>`);}
-/* grass along the bottom of the header, drawn like the in-game grass edge: a bumpy outlined top with tufts,
-   a bright rim, darker blade marks and specks, then a band of soil. 32×12 pixels, shown at double size */
-const GRASS_COL={ // outline, highlight, grass, blade shadow, soil top, soil
-  spring:["#24481a","#a6dc5c","#6cad37","#4a8a2a","#6b4424","#4e2f17"],
-  summer:["#1f4216","#93cf4b","#5a9c30","#3f7a25","#5e3a1c","#452812"],
-  fall:  ["#4f3212","#e8b04e","#c27c2c","#93561d","#5a3418","#3f2310"],
-  winter:["#61768a","#ffffff","#e4ecf3","#bccbd8","#7a8fa1","#5d7183"]};
-function grassSVG(season){const [ol,hi,mid,dk,s1,s2]=GRASS_COL[season],W=32,H=12,soil=9;
-  // top of the grass in each column (0 = highest); the ends match so the tile repeats without a seam
-  const top=[3,2,1,2,3,4,4,3,1,0,1,2,4,5,4,3,2,1,2,3,3,2,0,1,2,4,5,4,3,2,2,3];
-  let r="";
-  top.forEach((t,x)=>{r+=R1(x,t,1,1,ol)+R1(x,t+1,1,1,hi)+R1(x,t+2,1,soil-t-2,mid);});
-  [[3,6],[8,5],[12,7],[17,6],[21,7],[26,6],[30,7]].forEach(([x,y])=>r+=R1(x,y,1,2,dk)+R1(x+1,y-1,1,1,dk)); // blade marks
-  [[5,7],[14,8],[19,5],[24,8]].forEach(([x,y])=>r+=R1(x,y,1,1,hi));                                    // light specks
-  r+=R1(0,soil,W,1,s1)+R1(0,soil+1,W,H-soil-1,s2)+R1(6,soil+1,1,1,s1)+R1(18,soil+2,2,1,s1)+R1(27,soil+1,1,1,s1); // soil with pebbles
-  if(season==="spring")r+=R1(9,0,1,1,"#ffd6ec")+R1(23,1,1,1,"#fff7b0");
-  if(season==="summer")r+=R1(9,0,1,1,"#ffe24a")+R1(23,1,1,1,"#ff8a3d");
-  if(season==="fall")r+=R1(10,1,1,1,"#c2273a")+R1(22,1,1,1,"#8f4a1c");
+/* grass along the bottom of the header, like the farm's grass in the game: an even green with soft light and dark
+   speckles and a few darker tufts, a gently bumpy top, and a tan dirt edge underneath. 48×16 pixels at double size */
+const GRASS_COL={ // rim, tuft, dark speck, grass, light speck, dirt shadow, dirt, pebble
+  spring:["#2c6e30","#276328","#347e35","#3d8c3c","#4c9e45","#94744a","#b8935a","#cba873"],
+  summer:["#28662c","#235c25","#307632","#398437","#479840","#8e6e44","#b08b54","#c4a06c"],
+  fall:  ["#7a4a1c","#6e3f16","#8e5a22","#a86c2a","#c08236","#8a6a42","#ad8a56","#c2a070"],
+  winter:["#9fb3c4","#8ea3b6","#d2dee8","#e2ebf3","#f4f8fc","#8a7458","#a88f6c","#bba486"]};
+function grassSVG(season){const [rim,tuft,dk,g,lt,dsh,dirt,peb]=GRASS_COL[season],W=48,H=16;
+  const rnd=(x,y)=>{let n=(x*374761393+y*668265263)|0;n=Math.imul(n^(n>>>13),1274126177);return ((n^(n>>>16))>>>0)/4294967296;};
+  // gentle bumps on top (0 = highest) and an uneven edge where the grass meets the dirt; both repeat seamlessly
+  const top=[1,1,0,0,1,2,2,1,1,0,0,0,1,1,2,2,2,1,0,0,1,1,1,2,1,1,0,0,0,1,2,2,1,1,0,1,1,2,2,1,0,0,1,1,2,2,1,1];
+  const bot=[11,11,12,12,11,11,10,11,12,12,13,12,11,11,11,12,12,11,10,11,11,12,12,12,11,11,12,13,12,11,11,10,11,12,12,11,11,12,12,13,12,11,11,10,11,11,12,11];
+  let r="";   // above the bumpy top stays see-through (no dirt peeking out)
+  for(let x=0;x<W;x++){const t=top[x],bt=bot[x];
+    r+=R1(x,t,1,1,rim);                                            // slightly darker rim along the top
+    for(let y=t+1;y<bt;y++){const q=rnd(x,y);r+=R1(x,y,1,1,q<.14?dk:q<.30?lt:g);}   // soft speckles
+    r+=R1(x,bt,1,1,dsh)+R1(x,bt+1,1,H-bt-1,dirt);                  // shadow where the grass meets the dirt, then dirt
+  }
+  [[4,14],[13,15],[22,14],[31,15],[40,14],[45,15],[9,15],[27,14]].forEach(([x,y],i)=>r+=R1(x,y,i%3?1:2,1,peb));   // pebbles
+  // darker tufts with a light tip, like the clumps on the farm
+  [[6,5],[19,7],[33,4],[42,8],[12,9],[27,8]].forEach(([x,y])=>r+=R1(x,y,1,2,tuft)+R1(x+2,y,1,2,tuft)+R1(x+1,y+1,1,2,tuft)+R1(x+1,y,1,1,lt));
   return svgURL(`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" shape-rendering="crispEdges">${r}</svg>`);}
 // background inside the side strips, per season: leaf wallpaper, sunny wallpaper, soil with fallen leaves, holly wallpaper
 function stripBG(season){
@@ -985,7 +1004,7 @@ function miniCal(view){
     <p class="mc-hint">Click a day to set today's date</p>
   </div>`;
 }
-function setDate(s,d){st.season=s;st.day=d;if(ui.sch)ui.sch.v=null;ui.pickSeason=null;ui.calSeason=null;ui.cSeason=null;ui.fSeason=null;ui.plantDay=d;save();syncHeader();render();}
+function setDate(s,d){st.season=s;st.day=d;ui.pickSeason=null;ui.calSeason=null;ui.cSeason=null;ui.fSeason=null;ui.plantDay=d;save();syncHeader();render();}
 function toggleDatePop(open){const p=$("datePop");const was=p.classList.contains("open");if(open===false&&!was)return;open=open??!was;ui.pickSeason=null;if(open)p.innerHTML=miniCal();p.classList.toggle("open",open);$("dateBtn").setAttribute("aria-expanded",open);}
 // Back / Forward (Alt+arrows, mouse buttons, or typing an address): show that page
 window.addEventListener("popstate",e=>{navDepth=(e.state&&e.state.d)||0;closeModal();toggleDatePop(false);if(readHash()){render();scrollTo(0,0);}});
