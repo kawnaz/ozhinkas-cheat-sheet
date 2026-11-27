@@ -1,0 +1,30 @@
+OZHINKA'S CHEAT SHEET - unofficial fan reference for Stardew Valley 1.6
+=======================================================================
+
+TO OPEN
+1. Right-click the .zip file and choose "Extract All...". Opening it straight
+   from inside the zip will NOT work properly.
+2. Open the extracted folder and double-click index.html.
+   It opens in your web browser. Nothing gets installed.
+
+WHAT'S IN THE FOLDER
+  index.html     the dashboard (open this one)
+  css/           the look and colours
+  js/data.js     game info: villagers, crops, fish, bundles, festivals
+  js/gifts.js    every villager's loves, likes, dislikes and hates
+  js/villager-info.js  villagers' heart events
+  js/schedules.js      villagers' full schedules for every season
+  js/animals.js  farm animals, machines and artisan goods
+  js/prices.js   item sell prices, including quality prices
+  js/app.js      how the dashboard works
+  images/        the Egg Festival's painted egg icon; you can add other pictures here to use them offline
+  fonts/         optional Stardew Valley font file (see the guide inside)
+
+YOUR PROGRESS
+Your checkmarks save automatically in your browser.
+To share progress, click the floppy disk button (top right), then "Export progress file".
+Send that file to the other person, and they click "Load progress file".
+
+INTERNET
+Pictures, the tab icons and the pixel font load from the internet.
+Offline, everything still works, just with fewer pictures.

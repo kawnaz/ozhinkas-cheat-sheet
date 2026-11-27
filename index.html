@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ozhinka's Cheat Sheet</title>
+<link rel="icon" type="image/png" href="https://stardewvalleywiki.com/Special:FilePath/Blackberry.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&display=swap" rel="stylesheet">
+<!-- numbers only: a pixel font whose digits are easy to tell apart (Pixelify's 2 and 5 look alike) -->
+<link href="https://fonts.googleapis.com/css2?family=Silkscreen&text=0123456789&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<header>
+  <div class="hdeco hdeco-l" id="hdecoL" aria-hidden="true"></div>
+  <div class="hdeco hdeco-r" id="hdecoR" aria-hidden="true"></div>
+  <div class="top">
+    <div class="brand"><img class="ico" src="https://stardewvalleywiki.com/Special:FilePath/Blackberry.png" alt="" onerror="this.remove()"><b>Ozhinka's</b> <span>Cheat Sheet</span></div>
+    <!-- character select: placeholder heads for now; will be connected to the game later (SMAPI mod) -->
+    <button class="charbox" id="charBox" type="button" title="Character select (click to switch)" aria-label="Character select: click to switch"><span class="pchar pchar-cat"></span></button>
+    <div class="search"><input id="q" type="search" placeholder="Search anything — villager, item, crop, fish, bundle…" autocomplete="off"></div>
+    <div class="today" title="Set your current in-game date">
+      <span class="muted">Today:</span>
+      <div class="datewrap">
+        <button class="iconbtn datebtn" id="dateBtn" type="button" aria-haspopup="true" aria-expanded="false"></button>
+        <div class="date-pop" id="datePop" role="dialog" aria-label="Pick today's date"></div>
+      </div>
+      <button class="iconbtn nextday" id="nextDay" type="button" title="Go to the next day" aria-label="Next day"><span class="nd-arrow"></span></button>
+      <div class="yearbox" id="yearBox" role="group" aria-label="Year in your game"></div>
+      <div class="datewrap">
+        <button class="iconbtn hbtn" id="bgBtn" type="button" title="Choose a background" aria-haspopup="true" aria-expanded="false"><span class="bg-sw"></span></button>
+        <div class="date-pop bg-pop" id="bgPop" role="menu" aria-label="Choose a background"></div>
+      </div>
+      <button class="iconbtn hbtn" id="theme" title="Switch day (light) / night (dark)" aria-label="Switch light or dark theme"><span class="daynight"></span></button>
+      <button class="iconbtn hbtn" id="menuBtn" title="Save / load progress" aria-label="Save or load progress"><img class="chest" src="https://stardewvalleywiki.com/Special:FilePath/Chest.png" alt="" onerror="this.replaceWith('Save')"></button>
+    </div>
+  </div>
+  <nav id="nav"></nav>
+</header>
+<aside class="rail rail-l" id="railL" aria-label="Today and coming up"></aside>
+<aside class="rail rail-r" id="railR" aria-label="Plant, fish and bundles"></aside>
+<main id="main"></main>
+<footer>Unofficial fan reference for Stardew Valley 1.6. Values are base prices, before quality or profession bonuses. Your progress is saved in this browser only. Use the chest button <img class="ico ii" src="https://stardewvalleywiki.com/Special:FilePath/Chest.png" alt="" onerror="this.remove()"> at the top to export it or load someone else's. Game facts and images come from the <a href="https://stardewvalleywiki.com" target="_blank" rel="noopener">official Stardew Valley Wiki</a> (images need internet). Click any “wiki ↗” link for the full article. Stardew Valley art is © ConcernedApe.</footer>
+
+<div class="modal" id="modal"><div class="card"><button class="iconbtn close" onclick="closeModal()">✕</button><div id="mbody"></div></div></div>
+<input type="file" id="importFile" accept=".json,application/json" hidden>
+<div class="sv-tip" id="svtip"></div>
+
+<script src="js/data.js"></script>
+<script src="js/gifts.js"></script>
+<script src="js/villager-info.js"></script>
+<script src="js/schedules.js"></script>
+<script src="js/animals.js"></script>
+<script src="js/prices.js"></script>
+<script src="js/app.js"></script>
+<script src="js/live.js"></script>
+</body>
+</html>

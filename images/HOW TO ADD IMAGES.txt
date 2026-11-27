@@ -1,0 +1,19 @@
+HOW TO ADD IMAGES (optional)
+============================
+
+The dashboard loads pictures from the official Stardew Valley Wiki when you're online.
+Put image files in this folder and the dashboard uses them first, even offline.
+
+Name each file exactly like the wiki does: spaces become underscores, ending in .png.
+
+  Items, crops and fish:   Pumpkin.png, Largemouth_Bass.png, Dish_O'_The_Sea.png
+  Villager head icons:     Abigail_Icon.png, Sebastian_Icon.png
+  Villager big portraits:  Abigail.png, Sebastian.png   (shown in the pop-up)
+  Marriage badge:          Mermaid's_Pendant.png
+
+An easy way to get one: open the item's page on stardewvalleywiki.com,
+right-click its picture, choose "Save image as...", and save it here.
+
+Anything missing here is still loaded from the wiki, so you can add images a few at a time.
+
+Stardew Valley art is (c) ConcernedApe. Share this with friends, but don't post it publicly or sell it.

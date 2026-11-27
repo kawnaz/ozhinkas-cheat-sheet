@@ -1,0 +1,23 @@
+HOW TO USE THE STARDEW VALLEY FONT
+==================================
+
+The site is ready to use the Stardew-style pixel font, but the font file itself
+isn't included. Until you add it, the site uses Pixelify Sans, a similar free
+pixel font, so everything still works.
+
+1. Download a fan-made "Stardew Valley" font (search for "Stardew Valley font").
+   Check its licence: most are free for personal use only.
+2. Rename the file to one of these and put it in THIS folder (fonts/):
+     StardewValley.ttf
+     StardewValley.otf
+     StardewValley.woff2
+3. Refresh the page. The whole site switches to the new font.
+
+NOTE: SV-Title-Regular.ttf and SV-Title-AllCaps.ttf in this folder are the
+title-screen font by Eliot Truelove (dafont.com). The site doesn't use them
+anymore, so you can delete them. Their licence doesn't allow passing them on,
+so they must not go in the zip you send.
+
+If you install the font on your computer instead (double-click it, then
+"Install"), the site picks it up too, as long as its name is "Stardew Valley".
+The other person only sees it if the file is in this folder when you send the zip.

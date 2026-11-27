@@ -1,0 +1,5 @@
+# Stardew Valley font files are not ours to republish; the site works without them.
+fonts/*.ttf
+fonts/*.otf
+fonts/*.woff
+fonts/*.woff2
