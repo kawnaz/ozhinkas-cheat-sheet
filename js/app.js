@@ -3,7 +3,7 @@ const KEY="stardew-dash-v1";
 let st={season:"spring",day:1,year:1,fish:{},bundles:{},theme:null};
 try{const raw=localStorage.getItem(KEY);if(raw)st=Object.assign(st,JSON.parse(raw));}catch(e){}
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(st));}catch(e){}};
-let view="home", query="";
+let view="calendar", query="";
 const ui={vFilter:"all",cSeason:null,cSort:"gpd",cDir:-1,quality:1,tiller:false,riceWater:false,riceMill:false,special:false,plantDay:1,fSeason:null,fLoc:"all",fWeather:"all",fHide:false,fSort:"n",fDir:1,calSeason:null,bRoom:"all",vSort:"next",vPage:null};
 
 /* ================= HELPERS ================= */
@@ -62,6 +62,12 @@ const relStatus=name=>{const lf=typeof liveFriend==="function"?liveFriend(name):
 const REL={single:["Can be married","Bouquet"],dating:["Dating you","Bouquet"],engaged:["Engaged to you","Bouquet"],married:["Married to you","Mermaid's Pendant"]};
 const MARRY=name=>{const k=relStatus(name),[t,icon]=REL[k];
   return `<span class="rel-badge ${k}" title="${t}" style="display:inline-flex;vertical-align:middle">${k==="single"?`<span class="rel-shadow">${img(icon,"md")}${img(icon,"md")}</span>`:img(icon,"md")}</span>`;};
+/* Friendship hearts: the game's numbers when a farm is connected, otherwise the ones set by hand.
+   Max: 14 married, 10 dating/engaged or not a marriage candidate, 8 for a single marriage candidate (needs a Bouquet to go higher). */
+const heartMax=name=>{const k=relStatus(name),v=VILLAGERS.find(x=>x.n===name);return k==="married"?14:k!=="single"||!(v&&v.m)?10:8;};
+const heartCount=name=>{const lf=typeof liveFriend==="function"?liveFriend(name):undefined,max=heartMax(name);
+  return lf!==undefined?(lf?Math.min(max,Math.floor(lf.points/250)):0):Math.min(max,(st.hearts&&st.hearts[name])||0);};
+const HEARTTAG=name=>{const n=heartCount(name),m=heartMax(name);return `<span class="heart-tag${n?"":" zero"}" title="${n} of ${m} hearts">${n}/${m}${ic("HeartIconLarge")}</span>`;};
 const ipill=(name,c="")=>/^(All|Most) /.test(name)
   ? `<span class="pill ${c} cat catlink" data-cat="${esc(name)}" title="${esc(name)}">${esc(catLabel(name))}</span>`
   : `<span class="pill ${c} item" data-search="${esc(baseName(name))}">${img(name,"sm")}${esc(name)}</span>`;
@@ -160,7 +166,7 @@ MACHINES.forEach(m=>{ref(m.n,{type:"machine",m});m.goods.forEach(gd=>ref(gd[0],{
 
 /* ================= RENDER ================= */
 // [key, label, in-game icon]
-const TABS=[["home","Home","Farmhouse"],["calendar","Calendar","Calendar"],["villagers","Town","Solid Gold Lewis"],["crops","Crops","Starfruit"],["animals","Animals","White Chicken"],["fish","Fish","Legend"],["bundles","Bundles","Bundle Green"],["festivals","Festivals","Jack-O-Lantern"]];
+const TABS=[["calendar","Calendar","Calendar"],["villagers","Town","Solid Gold Lewis"],["crops","Crops","Starfruit"],["animals","Animals","White Chicken"],["fish","Fish","Legend"],["bundles","Bundles","Bundle Green"],["festivals","Festivals","Jack-O-Lantern"]];
 function renderNav(){$("nav").innerHTML=TABS.map(([k,l,i])=>`<button class="${view===k&&!query?"on":""}" data-tab="${k}">${i?img(i,"tab"):img(cap(st.season),"tab wide")}${l}</button>`).join("");}
 /* ---- Pages and history ----
    the address bar keeps where you are (#villagers, #villagers/Abigail, #search/pumpkin), and every page you open
@@ -173,7 +179,8 @@ function goBack(fallback){if(navDepth>0)history.back();else go(fallback||view);}
 function go(v){view=v;query="";$("q").value="";ui.vPage=null;ui.vFind="";nav(v);render();window.scrollTo(0,0);}
 function openSearch(q){closeModal();query=q;$("q").value=q;nav("search/"+encodeURIComponent(q));render();window.scrollTo(0,0);}
 const backBtn=fallback=>`<button class="iconbtn small vp-back" type="button" data-back="${esc(fallback)}" title="Back to the previous page (Alt+←)">← Back</button>`;
-function readHash(){const [t,...rest]=location.hash.slice(1).split("/"),p=rest.join("/");
+function readHash(){let [t,...rest]=location.hash.slice(1).split("/"),p=rest.join("/");
+  if(t==="home")t="calendar";   // the Home page was removed; old #home links open the Calendar
   if(t==="search"){query=decodeURIComponent(p||"");$("q").value=query;return true;}
   if(!TABS.some(x=>x[0]===t))return false;
   query="";$("q").value="";ui.vFind="";
@@ -186,7 +193,7 @@ function render(){
   renderNav();
   const m=$("main");
   if(query){m.innerHTML=renderSearch();labelTables(m);coinify(m);renderRails();renderHeaderDeco();return;}
-  m.innerHTML=({home:renderHome,calendar:renderCalendar,villagers:renderVillagers,crops:renderCrops,animals:renderAnimals,fish:renderFish,bundles:renderBundles,festivals:renderFestivals})[view]();
+  m.innerHTML=({calendar:renderCalendar,villagers:renderVillagers,crops:renderCrops,animals:renderAnimals,fish:renderFish,bundles:renderBundles,festivals:renderFestivals})[view]();
   labelTables(m);coinify(m);applyVFind();
   renderRails();renderHeaderDeco();
 }
@@ -224,36 +231,8 @@ function bundleProgress(){
   return {done,total,bundlesDone:BUNDLES.filter(b=>b.items.filter(i=>st.bundles[b.n+"|"+i]).length>=(b.need||b.items.length)).length};
 }
 
-function renderHome(){
-  const {season,day}=st;
-  const today=eventsOn(season,day);
-  // upcoming 7 days
-  const up=[];
-  for(let i=1;i<=7;i++){let d=day+i,s=SEASONS.indexOf(season);if(d>28){d-=28;s=(s+1)%4;}eventsOn(SEASONS[s],d).forEach(e=>up.push({...e,when:`${cap(SEASONS[s])} ${d}`,in:i}));}
-  const fishNow=FISH.filter(f=>f.s.includes(season)&&!st.fish[f.n]&&unlocked(f));
-  const caught=FISH.filter(f=>st.fish[f.n]).length;
-  const bp=bundleProgress();
-  const plant=CROPS.filter(c=>c.s.includes(season)&&c.seed!=null&&!cropLock(c,day)).map(c=>({c,...cropCalc(c,season,day)})).filter(x=>x.profit>0).sort((a,b)=>b.gpd-a.gpd).slice(0,5);
-  return `
-  <h1>${SICON[season]} ${cap(season)} ${day}, Year ${st.year}</h1>
-  <p class="sub">Your farm at a glance. To match your game, change the date and year at the top.</p>
-  <div class="grid home-grid">
-    <div class="card home-cal"><h2>Calendar</h2>${miniCal(true)}</div>
-    <div class="card"><h2>Today</h2>${today.length?today.map(evHTML).join(""):'<p class="muted">Nothing special today. A good day to farm!</p>'}</div>
-    <div class="card"><h2>Next 7 days</h2>${up.length?up.map(e=>`<div style="display:flex;justify-content:space-between;gap:8px;align-items:center">${evHTML(e)}<span class="muted small">${e.when}${e.in===1?" · tomorrow":""}</span></div>`).join(""):'<p class="muted">Quiet week ahead.</p>'}</div>
-    <div class="card"><h2>Best crops to plant now</h2>
-      ${plant.length?`<table><tr><th>Crop</th><th class="num">Harvests</th><th class="num">Profit</th></tr>${plant.map(x=>`<tr><td>${img(x.c.n)}${itemLink(x.c.n)}</td><td class="num">${x.h}</td><td class="num">${g(Math.round(x.profit))}</td></tr>`).join("")}</table><p class="small muted">If you plant today (${cap(season)} ${day}), with ${(QUALITIES.find(q=>q[0]===ui.quality)||QUALITIES[0])[1].toLowerCase()} quality and ${ui.tiller?"the":"no"} Tiller bonus (change these on the Crops tab).</p>`:'<p class="muted">No profitable crops left to plant this season. Try the Greenhouse!</p>'}</div>
-    <div class="card"><h2>Fish</h2><div class="stat">${caught} / ${FISH.length} <span class="small muted">caught</span></div>
-      <div class="bar" style="margin:8px 0"><i style="width:${(caught/FISH.length*100).toFixed(1)}%"></i></div>
-      <p class="small muted" style="margin:0 0 8px">${fishNow.length} uncaught fish are biting this season · <a href="#fish" data-tab="fish">See them →</a></p>
-      ${fishNow.slice(0,14).map(f=>`<span class="pill item" data-search="${esc(f.n)}">${img(f.n,"sm")}${esc(f.n)}${f.w!=="any"?" "+(f.w==="rain"?IC.rain():IC.sun()):""}</span>`).join("")||'<p class="muted">You\'ve caught them all for this season!</p>'}</div>
-    <div class="card"><h2>Community Center</h2><div class="stat">${bp.bundlesDone} / ${BUNDLES.length} <span class="small muted">bundles</span></div>
-      <div class="bar" style="margin:8px 0"><i style="width:${(bp.done/bp.total*100).toFixed(1)}%"></i></div>
-      <p class="small muted" style="margin:0">${bp.done} of ${bp.total} items donated · <a href="#bundles" data-tab="bundles">Open checklist →</a></p></div>
-  </div>`;
-}
+// one birthday/festival line (used by the side strips and calendar)
 function evHTML(e){return e.k==="b"?`<span class="ev b" data-villager="${esc(e.v)}">${img(e.v,"sm")}${esc(e.label)}'s birthday ${IC.bday()}</span>`:`<span class="ev f" data-fest="${esc(e.f)}">${IC.fest(e.f)}${esc(e.label)}</span>`;}
-
 function renderCalendar(){
   const s=ui.calSeason||st.season, si=SEASONS.indexOf(s);
   let cells="";
@@ -298,7 +277,7 @@ function vblock(v,nameHTML){
   return `<div class="card sv-card vblock" data-villager="${esc(v.n)}" data-find="${esc((v.n+" "+v.home).toLowerCase())}" title="Open ${esc(v.n)}'s page">
       <div class="vb-head">
         ${img(v.n,"hd",true)}
-        <div class="vb-id"><div class="vname">${nameHTML||esc(v.n)} ${v.m?MARRY(v.n):""}</div>
+        <div class="vb-id"><div class="vname">${nameHTML||esc(v.n)} ${v.m?MARRY(v.n):""}${HEARTTAG(v.n)}</div>
           <div class="vb-bday" title="Birthday: ${cap(v.s)} ${v.d}">${SICON[v.s]} ${cap(v.s)} ${v.d}${dd===0?` <b class="soon">${IC.bday()} Today!</b>`:dd<=7?` <b class="soon">in ${dd}d</b>`:""}</div></div>
       </div>
       ${srLoves(v.loves)}
@@ -431,8 +410,7 @@ function schedTab(v,info){
 /* Relationship hearts on a villager's page: from the game when a farm is connected (live.js), otherwise set by clicking */
 function relHTML(name){
   const lf=typeof liveFriend==="function"?liveFriend(name):undefined; // undefined = no farm connected, null = not met yet
-  const isLive=lf!==undefined, max=st.spouse===name?14:10;
-  const n=isLive?(lf?Math.min(max,Math.floor(lf.points/250)):0):Math.min(max,(st.hearts&&st.hearts[name])||0);
+  const isLive=lf!==undefined, max=heartMax(name), n=heartCount(name);
   const hs=Array.from({length:max},(_,i)=>`<button type="button" class="rel-h ${i<n?"on":""}" ${isLive?"disabled":`data-heart="${esc(name)}|${i+1}"`} aria-label="${i+1} hearts">${ic("HeartIconLarge")}</button>`).join("");
   // 250 friendship points per heart
   const toNext=lf&&n<max?`${(n+1)*250-lf.points} pts to the next heart`:lf?"max hearts":"";
@@ -694,7 +672,7 @@ function renderSearch(){
   const locFish=FISH.filter(f=>f.loc.toLowerCase().includes(q)&&!f.n.toLowerCase().includes(q));
   if(!vil.length&&!items.length&&!fests.length&&!locFish.length)return `${backBtn(view)}<h1>No results for “${esc(query)}”</h1><p class="sub">Try a shorter word, e.g. “pump” or “bass”.</p>`;
   let h=`<div class="res">${backBtn(view)}<h1>Results for “${esc(query)}”</h1>`;
-  if(vil.length)h+=`<h3>Villagers</h3><div class="grid g3">${vil.map(v=>`<div class="card click sv-card" data-villager="${esc(v.n)}"><div class="vhead">${img(v.n,"lg",true)}<div><h2 style="margin:0">${hl(v.n)} ${v.m?MARRY(v.n):""}</h2><div class="small muted">${SICON[v.s]} ${cap(v.s)} ${v.d} · ${esc(v.home)}</div></div></div>${srLoves(v.loves)}</div>`).join("")}</div>`;
+  if(vil.length)h+=`<h3>Villagers</h3><div class="grid g3">${vil.map(v=>`<div class="card click sv-card" data-villager="${esc(v.n)}"><div class="vhead">${img(v.n,"lg",true)}<div><h2 style="margin:0">${hl(v.n)} ${v.m?MARRY(v.n):""}${HEARTTAG(v.n)}</h2><div class="small muted">${SICON[v.s]} ${cap(v.s)} ${v.d} · ${esc(v.home)}</div></div></div>${srLoves(v.loves)}</div>`).join("")}</div>`;
   if(items.length)h+=`<h3>Items</h3><div class="grid g2">${items.slice(0,40).map(x=>itemCard(x,hl)).join("")}</div>`;
   if(fests.length)h+=`<h3>Festivals</h3><div class="grid g3">${fests.map(f=>`<div class="card click" data-fest="${esc(f.n)}"><h2 style="margin:0">${hl(f.n)}</h2><div class="small muted">${SICON[f.s]} ${cap(f.s)} ${f.days.join(", ")} · ${esc(f.where)}</div></div>`).join("")}</div>`;
   if(locFish.length)h+=`<h3>Fish found at “${esc(query)}”</h3><div>${locFish.map(f=>`<span class="pill item" data-search="${esc(f.n)}">${esc(f.n)}</span>`).join("")}</div>`;
@@ -802,7 +780,7 @@ document.addEventListener("click",e=>{
   const pk=e.target.closest("[data-pick]");
   if(pk){const [s,d]=pk.dataset.pick.split("|");toggleDatePop(false);setDate(s,+d);return;}
   const pcs=e.target.closest("[data-pcs]");
-  if(pcs){ui.pickSeason=pcs.dataset.pcs;if($("datePop").classList.contains("open"))$("datePop").innerHTML=miniCal();if(view==="home"&&!query)render();return;}
+  if(pcs){ui.pickSeason=pcs.dataset.pcs;if($("datePop").classList.contains("open"))$("datePop").innerHTML=miniCal();return;}
   if(!e.target.closest("#datePop"))toggleDatePop(false);
   const t=e.target.closest("[data-tab],[data-villager],[data-fest],[data-search],[data-cal],[data-vf],[data-cs],[data-csort],[data-fs],[data-fsort],[data-room],[data-gobundle]");
   if(!t)return;

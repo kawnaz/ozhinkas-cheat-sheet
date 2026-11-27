@@ -744,3 +744,8 @@ html.w1900{
   body{padding-bottom:64px}
   .rail,.hdeco{display:none!important}
 }
+/* "x/n heart" friendship tag next to villager names */
+.heart-tag{display:inline-flex;align-items:center;gap:2px;margin-left:2px;font:700 13px "Silkscreen","Pixelify Sans",ui-monospace,monospace;color:#a3324a;flex-shrink:0}
+.heart-tag .ico{width:14px;height:14px}
+.heart-tag.zero{color:#9c7b5c}
+h2 .heart-tag{margin-left:8px;vertical-align:middle}
