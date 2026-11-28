@@ -11,6 +11,11 @@ const liveNorm=s=>String(s).toLowerCase().replace(/\s*×.*$/,"").replace(/\(.*?\
 const liveCode=s=>{const m=String(s||"").toUpperCase().match(/[A-Z2-9]{12}/);return m?m[0]:null;};
 // Friendship with a villager for the shown farmer: undefined = no farm connected, null = not met yet
 const liveFriend=name=>{if(!st.farmCode||!live.snap)return undefined;const f=liveFarmer(live.snap);return (f&&f.friendships.find(x=>x.npc===name))||null;};
+// the farmer's picture sent by the mod (farmers[i].avatar, a small PNG data URL); null = show the cat instead.
+// Only plain base64 PNG/GIF/WebP data URLs are accepted, so nothing else can sneak into the page's styles.
+const liveAvatar=f=>{const a=f&&f.avatar;return typeof a==="string"&&a.length<400000&&/^data:image\/(png|gif|webp);base64,[A-Za-z0-9+\/=]+$/.test(a)?a:null;};
+// a farmer's face as HTML: their avatar, or the cat/dog placeholder
+const farmerFace=(f,cls="")=>{const a=liveAvatar(f);return a?`<span class="pchar pchar-av ${cls}" style="background-image:url(&quot;${a}&quot;)"></span>`:`<span class="pchar pchar-${st.char==="dog"?"dog":"cat"} ${cls}"></span>`;};
 const liveFarmer=s=>s.farmers.find(f=>f.id===st.farmerId)||s.farmers.find(f=>f.isHost)||s.farmers[0];
 
 function applyLive(s){
@@ -67,7 +72,8 @@ function liveDisconnect(){
 // The character button: while connected it switches between the farm's farmers
 function liveBadge(){
   const b=$("charBox");if(!b)return;
-  if(!st.farmCode||!live.snap){b.title="Save & share progress, connect your farm";b.setAttribute("aria-label","Save and share progress");b.classList.remove("live");return;}
+  if(!st.farmCode||!live.snap){b.title="Save & share progress, connect your farm";b.setAttribute("aria-label","Save and share progress");b.classList.remove("live");applyChar();return;}
+  applyChar(); // header icon follows the shown farmer
   const f=liveFarmer(live.snap);b.classList.add("live");
   b.title=`${f.name} · ${live.snap.farmName} Farm (from the game, updated ${new Date(live.updatedAt).toLocaleString()})`+". Click to switch farmer, farm info and saving";b.setAttribute("aria-label","Farmer and farm connection");
 }
@@ -79,7 +85,7 @@ function charPop(open){
   if(open===false||was){if(p)p.remove();$("charBox").setAttribute("aria-expanded","false");if(was||open===false)return;}
   const s=live.snap,cur=liveFarmer(s),others=s.farmers.filter(f=>f!==cur);
   p=document.createElement("div");p.id="charPop";p.className="char-pop";p.setAttribute("role","menu");
-  p.innerHTML=(others.length?others.map(f=>`<button type="button" role="menuitem" class="cp-item" data-farmer="${esc(f.id)}"><span class="pchar pchar-${st.char==="dog"?"dog":"cat"}"></span><span class="cp-name">${esc(f.name)}${f.isHost?' <i class="cp-host">host</i>':""}</span></button>`).join("")
+  p.innerHTML=(others.length?others.map(f=>`<button type="button" role="menuitem" class="cp-item" data-farmer="${esc(f.id)}">${farmerFace(f)}<span class="cp-name">${esc(f.name)}${f.isHost?' <i class="cp-host">host</i>':""}</span></button>`).join("")
     :`<p class="cp-none">Only ${esc(cur.name)} on this farm.</p>`)
     +`<button type="button" role="menuitem" class="cp-item cp-farm" data-farminfo>${ic("Chest")}<span class="cp-name">Farm &amp; saving</span></button>`;
   const r=$("charBox").getBoundingClientRect();
@@ -112,8 +118,8 @@ function farmMenu(){
     else if(live.error)h+=`<p class="small" style="color:var(--love)">Couldn't reach the farm server right now (${esc(live.error)}). It tries again by itself.</p>`;
     if(s){
       h+=`<p><b>${esc(s.farmName)} Farm</b> · ${cap(s.date.season)} ${s.date.day}, Year ${s.date.year}<br><span class="small muted">Last upload: ${new Date(live.updatedAt).toLocaleString()}</span></p>`;
-      if(s.farmers.length>1)h+=`<p class="small">Showing: <select id="farmWho">${s.farmers.map(f=>`<option value="${esc(f.id)}" ${f===liveFarmer(s)?"selected":""}>${esc(f.name)}${f.isHost?" (host)":""}</option>`).join("")}</select></p>`;
-      else h+=`<p class="small">Farmer: <b>${esc(s.farmers[0]?.name||"?")}</b></p>`;
+      if(s.farmers.length>1)h+=`<p class="small farm-who">${farmerFace(liveFarmer(s))}Showing: <select id="farmWho">${s.farmers.map(f=>`<option value="${esc(f.id)}" ${f===liveFarmer(s)?"selected":""}>${esc(f.name)}${f.isHost?" (host)":""}</option>`).join("")}</select></p>`;
+      else h+=`<p class="small farm-who">${farmerFace(s.farmers[0])}Farmer: <b>${esc(s.farmers[0]?.name||"?")}</b></p>`;
     }else if(!live.error)h+=`<p class="small muted">Loading…</p>`;
     h+=`<p class="small muted">Farm code: ${esc(st.farmCode)}.${live.missing?"":" While connected, the date, fish, bundles and spouse come from the game and update after each in-game night."}</p>
     <div class="toolbar"><button class="iconbtn" id="farmRefresh">Refresh now</button><button class="iconbtn" id="farmSave">${ic("Chest")} Save &amp; share</button><button class="iconbtn" id="farmOff" style="color:var(--love)">Disconnect</button></div>`;
@@ -124,7 +130,7 @@ function farmMenu(){
   if($("farmRefresh"))$("farmRefresh").onclick=()=>liveLoad();
   if($("farmSave"))$("farmSave").onclick=()=>saveMenu();
   if($("farmOff"))$("farmOff").onclick=()=>{if(confirm("Disconnect this farm? Your earlier manual checkmarks come back."))liveDisconnect();closeModal();};
-  if($("farmWho"))$("farmWho").onchange=e=>{st.farmerId=e.target.value;applyLive(live.snap);save();syncHeader();render();liveBadge();};
+  if($("farmWho"))$("farmWho").onchange=e=>{st.farmerId=e.target.value;applyLive(live.snap);save();syncHeader();render();liveBadge();farmMenu();};
 }
 
 // Start: a link like index.html?farm=CODE connects straight away (handy on a phone)

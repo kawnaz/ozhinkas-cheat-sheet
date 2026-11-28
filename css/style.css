@@ -1413,3 +1413,11 @@ header .today .datebox #dateBtn{height:100%}
 /* Joja route (connected farm bought the JojaMart membership): bundles aren't used */
 .joja-note{margin:0 0 10px;border-left:4px solid var(--love)}
 .rooms.joja-off{opacity:.5}
+
+/* the farmer's own picture from the game (mod sends farmers[i].avatar: 32x72 standing sprite, 8px headroom for hats).
+   Small square slots (header, drop-down) show head and shoulders: scaled up, cropped from the top, crisp pixels. */
+.pchar-av{background-size:130% auto;background-position:50% 8%;image-rendering:pixelated}
+.farm-who{display:flex;align-items:center;gap:8px}
+.farm-who .pchar{width:32px;height:32px}
+/* the farm box has room: the whole farmer at 1:1 */
+.farm-who .pchar-av{width:32px;height:72px;background-size:32px 72px;background-position:0 0}

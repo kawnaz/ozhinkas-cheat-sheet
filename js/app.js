@@ -881,7 +881,11 @@ let qt;$("q").addEventListener("input",e=>{clearTimeout(qt);qt=setTimeout(()=>{q
   if(query)nav("search/"+encodeURIComponent(query),onSearch);else if(onSearch)nav(pageHash(),true);
   render();},120);});
 // character select (placeholder): clicking swaps between the cat and dog heads; remembered in this browser
-const applyChar=()=>{const p=document.querySelector("#charBox .pchar");if(p)p.className="pchar pchar-"+(st.char==="dog"?"dog":"cat");};
+// with a farm connected, the farmer's own picture from the game replaces the cat (see farmerFace in live.js)
+const applyChar=()=>{const p=document.querySelector("#charBox .pchar");if(!p)return;
+  const f=typeof live!=="undefined"&&st.farmCode&&live.snap?liveFarmer(live.snap):null;
+  const a=typeof liveAvatar==="function"?liveAvatar(f):null;
+  p.className="pchar "+(a?"pchar-av":"pchar-"+(st.char==="dog"?"dog":"cat"));p.style.backgroundImage=a?`url("${a}")`:"";};
 applyChar();
 const curTheme=()=>st.theme||(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light");
 /* ---- Seasonal decorations ----
