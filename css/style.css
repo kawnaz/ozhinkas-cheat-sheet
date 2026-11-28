@@ -1409,3 +1409,7 @@ header .today .datebox #dateBtn{height:100%}
 .mc-day.future{opacity:.35;cursor:not-allowed;filter:grayscale(.6)}
 .sv-day .n.future{opacity:.4;cursor:default}
 .yearbox button:disabled{opacity:.35;cursor:default}
+
+/* Joja route (connected farm bought the JojaMart membership): bundles aren't used */
+.joja-note{margin:0 0 10px;border-left:4px solid var(--love)}
+.rooms.joja-off{opacity:.5}

@@ -622,11 +622,15 @@ function renderCrops(){
   <p class="small muted">The price under each crop's name is the seed price. “Seed n/a” means you can't buy it normally, so profit counts the seed as free. Profit (1) = one harvest's sale minus the seed. Yields above ×1 are averages.</p>`;
 }
 
+// the mod's water names for a fish ("River, Mountain Lake" -> ["River","Mountain Lake"]) and how it's caught
+const fishWaters=f=>f.loc.split(", ");
+const fishBy=f=>f.by==="pot"?"Crab Pot":"Fishing Rod";
+const fishByIcon=f=>ic(f.by==="pot"?"Crab Pot":"Bamboo Pole");
 function renderFish(){
   const s=ui.fSeason||st.season;
-  const locs=["all","Ocean","River","Mountain Lake","Forest Pond","Secret Woods","Mines","Desert","Sewers","Legendary"];
+  const locs=["all","Ocean","River","Mountain Lake","Forest Pond","Secret Woods Pond","Desert Pond","Sewers","Mines","Legendary","Crab Pot"];
   let list=FISH.filter(f=>(s==="all"||f.s.includes(s)));
-  if(ui.fLoc==="Legendary")list=list.filter(f=>f.leg);else if(ui.fLoc!=="all")list=list.filter(f=>f.loc.includes(ui.fLoc));
+  if(ui.fLoc==="Legendary")list=list.filter(f=>f.leg);else if(ui.fLoc==="Crab Pot")list=list.filter(f=>f.by==="pot");else if(ui.fLoc!=="all")list=list.filter(f=>fishWaters(f).includes(ui.fLoc));
   if(ui.fWeather!=="all")list=list.filter(f=>f.w===ui.fWeather||f.w==="any");
   if(ui.fHide)list=list.filter(f=>!st.fish[f.n]);
   const key={n:f=>f.n,loc:f=>f.loc,p:f=>f.p}[ui.fSort];
@@ -645,11 +649,12 @@ function renderFish(){
     <tr><th>✓</th>${th("n","Fish")}${th("loc","Where")}<th>Seasons</th><th>Time</th><th>Weather</th>${th("p","Price",1)}<th>Bundles</th></tr>
     ${list.map(f=>{const bs=BUNDLES.filter(b=>b.items.includes(f.n));return `<tr data-card="f:${esc(f.n)}" class="${st.fish[f.n]?"done":""}${cardShut("f:"+f.n)?" shut":""}">
       <td><input type="checkbox" data-fish="${esc(f.n)}" ${st.fish[f.n]?"checked":""} style="accent-color:var(--accent);width:17px;height:17px"></td>
-      <td><i class="card-chev" aria-hidden="true">▾</i>${img(f.n)}<b class="item" data-search="${esc(f.n)}">${esc(f.n)}</b> ${f.leg?IC.star():""} ${wiki(f.n,"↗")}</td><td style="white-space:normal;min-width:160px">${esc(f.loc)}</td>
+      <td><i class="card-chev" aria-hidden="true">▾</i>${img(f.n)}<b class="item" data-search="${esc(f.n)}">${esc(f.n)}</b> ${f.leg?IC.star():""} ${wiki(f.n,"↗")}</td><td style="white-space:normal;min-width:160px">${esc(f.loc)}${f.spot?`<div class="small muted">${esc(f.spot)}</div>`:""}<div class="small muted fish-by">${fishByIcon(f)} Caught with: ${fishBy(f)}</div></td>
       <td>${seasonPills(f.s)}</td><td>${esc(f.t)}</td><td>${f.w==="any"?'<span class="wtxt">Any</span>':f.w==="rain"?IC.rain()+'<span class="wtxt"> Rain</span>':IC.sun()+'<span class="wtxt"> Sun</span>'}</td>
-      <td class="num">${g(f.p)}</td><td>${bs.map(b=>pill(b.n,"ok")).join("")}</td></tr>`;}).join("")||'<tr><td colspan="8" class="muted">No fish match these filters.</td></tr>'}
+      <td class="num">${g(f.p)}</td><td>${bs.map(b=>pill(bundleName(b),"ok")).join("")}</td></tr>`;}).join("")||'<tr><td colspan="8" class="muted">No fish match these filters.</td></tr>'}
   </table></div>
-  ${list.some(f=>f.note)?`<p class="small muted">${IC.star()} Legendary fish: you can catch each one only once (unless you get the 1.6 Qi quest versions).</p>`:""}`;
+  ${list.some(f=>f.note)?`<p class="small muted">${IC.star()} Legendary fish: you can catch each one only once (unless you get the 1.6 Qi quest versions).</p>`:""}
+  ${list.some(f=>f.by==="pot")?`<p class="small muted">Crab Pot catches come any season, any time and any weather. Ocean pots catch salt-water ones, river, lake and pond pots catch fresh-water ones.</p>`:""}`;
 }
 
 /* finishing the Vault repairs the bus to the Desert (Oasis seeds) */
@@ -658,6 +663,8 @@ const VAULT=BUNDLES.filter(b=>b.room==="Vault");
 const ROOM_REWARD={"Crafts Room":"Bridge to the Quarry repaired","Pantry":"Greenhouse","Fish Tank":"Glittering Boulder removed",
   "Boiler Room":"Minecarts repaired","Bulletin Board":"Friendship boost with villagers","Vault":"Bus to the Desert repaired","Abandoned JojaMart":"Movie Theater"};
 const busFixed=()=>VAULT.every(b=>b.items.every(i=>st.bundles[b.n+"|"+i]));
+// shown name, worded like the game and the mod: "River Fish" -> "River Fish Bundle" ("The Missing Bundle" stays). b.n stays the save key.
+const bundleName=b=>/bundle$/i.test(b.n)?b.n:b.n+" Bundle";
 const bundleDone=b=>b.items.filter(i=>st.bundles[b.n+"|"+i]).length>=(b.need||b.items.length);
 // Willy's boat to Ginger Island can only be fixed after the Community Center is finished
 const ccDone=()=>BUNDLES.filter(b=>b.room!=="Abandoned JojaMart").every(bundleDone);
@@ -668,13 +675,16 @@ const LOCKS={bus:["Complete: Vault",busOpen],island:["Complete: Community Center
 /* things the player hasn't unlocked yet are left out of the calendar and the tips (x.yr: from that year; x.lock: a LOCKS key) */
 const lockReason=x=>x.yr&&st.year<x.yr?`From Year ${x.yr}`:x.lock&&LOCKS[x.lock]&&!LOCKS[x.lock][1]()?LOCKS[x.lock][0]:"";
 const unlocked=x=>!lockReason(x);
+// the connected farm bought the JojaMart membership: the Community Center bundles aren't used (the game's own "joja" flag)
+const jojaRoute=()=>typeof live!=="undefined"&&!!st.farmCode&&!!live.snap?.communityCenter?.joja;
+const JOJA_NOTE="This farm is on the Joja route (JojaMart membership), so the Community Center bundles aren't used. The repairs are bought at JojaMart instead.";
 function renderBundles(){
   const rooms=[...new Set(BUNDLES.map(b=>b.room))];
-  const bp=bundleProgress();
+  const bp=bundleProgress(), joja=jojaRoute();
   const isDone=b=>b.items.filter(i=>st.bundles[b.n+"|"+i]).length>=(b.need||b.items.length);
-  return `<h1>Community Center Bundles</h1><p class="sub">${bp.bundlesDone} of ${BUNDLES.length} bundles complete. This is the standard bundle set (not Remixed). Click a room to see its bundles.</p>
+  return `<h1>Community Center Bundles</h1>${joja?`<div class="card joja-note"><b>${pill("Not used on the Joja route")}</b><p class="small" style="margin:6px 0 0">${JOJA_NOTE}</p></div>`:""}<p class="sub">${bp.bundlesDone} of ${BUNDLES.length} bundles complete. This is the standard bundle set (not Remixed). Click a room to see its bundles.</p>
   ${collapseAllBtn()}
-  <div class="rooms">${rooms.map(r=>{
+  <div class="rooms${joja?" joja-off":""}">${rooms.map(r=>{
     const list=BUNDLES.filter(b=>b.room===r), n=list.filter(isDone).length, all=n===list.length;
     return section("b:"+r,`<input type="checkbox" class="room-tick" data-roomtick="${esc(r)}" ${all?"checked":""} title="${all?"Untick to clear":"Tick to mark"} every bundle in the ${esc(r)}${r==="Vault"?" (this also counts the bus as repaired)":""}" aria-label="${esc(r)} complete"><b class="room-name">${esc(r)}</b><span class="room-rew">${ROOM_REWARD[r]?`Reward: <b>${esc(ROOM_REWARD[r])}</b>`:""}</span><span class="room-prog"><span class="bar room-bar"><i style="width:${n/list.length*100}%"></i></span><span class="room-count ${all?"all":""}">${n} / ${list.length} ${list.length===1?"bundle":"bundles"}</span></span>`,
       `<div class="grid g3">${list.map(b=>bundleCard(b)).join("")}</div>`,"room"+(all?" room-done":"")+(/joja/i.test(r)?" room-joja":""));}).join("")}</div>`;
@@ -682,7 +692,7 @@ function renderBundles(){
 function bundleCard(b){
     const need=b.need||b.items.length, have=b.items.filter(i=>st.bundles[b.n+"|"+i]).length, done=have>=need;
     return `<div class="card ${done?"complete":""}">
-      <h2 style="margin:0 0 4px">${done?IC.done()+" ":""}${esc(b.n)}</h2>
+      <h2 style="margin:0 0 4px">${done?IC.done()+" ":""}${esc(bundleName(b))}</h2>
       <div class="small muted">${b.need?`Any ${need} of ${b.items.length} · `:""}${Math.min(have,need)}/${need} · Reward: <b>${esc(b.r)}</b></div>
       <div class="bar" style="margin:8px 0"><i style="width:${Math.min(100,have/need*100)}%"></i></div>
       <div class="checklist">${b.items.map(i=>{const k=b.n+"|"+i,c=!!st.bundles[k];return `<label class="${c?"done":""}"><input type="checkbox" data-bundle="${esc(k)}" ${c?"checked":""}>${img(i)}<span>${esc(i)}</span>${INDEX.get(baseName(i).toLowerCase())?.refs.length>1?` <span class="item small muted" data-search="${esc(baseName(i))}">${IC.info()}</span>`:""}</label>`;}).join("")}</div>
@@ -706,7 +716,7 @@ function renderSearch(){
   const vil=VILLAGERS.filter(v=>v.n.toLowerCase().includes(q));
   const items=[...INDEX.values()].filter(x=>x.name.toLowerCase().includes(q)).sort((a,b)=>(a.name.toLowerCase().startsWith(q)?0:1)-(b.name.toLowerCase().startsWith(q)?0:1)||a.name.localeCompare(b.name));
   const fests=FESTIVALS.filter(f=>f.n.toLowerCase().includes(q)||f.where.toLowerCase().includes(q));
-  const locFish=FISH.filter(f=>f.loc.toLowerCase().includes(q)&&!f.n.toLowerCase().includes(q));
+  const locFish=FISH.filter(f=>(f.loc+" "+(f.spot||"")).toLowerCase().includes(q)&&!f.n.toLowerCase().includes(q));
   if(!vil.length&&!items.length&&!fests.length&&!locFish.length)return `${backBtn(view)}<h1>No results for “${esc(query)}”</h1><p class="sub">Try a shorter word, e.g. “pump” or “bass”.</p>`;
   let h=`<div class="res">${backBtn(view)}<h1>Results for “${esc(query)}”</h1>`;
   if(vil.length)h+=`<h3>Villagers</h3><div class="grid g3">${vil.map(v=>`<div class="card click sv-card" data-villager="${esc(v.n)}"><div class="vhead">${img(v.n,"lg",true)}<div><h2 style="margin:0">${hl(v.n)} ${v.m?MARRY(v.n):""}${HEARTTAG(v.n)}</h2><div class="small muted">${SICON[v.s]} ${cap(v.s)} ${v.d} · ${esc(v.home)}</div></div></div>${srLoves(v.loves)}</div>`).join("")}</div>`;
@@ -741,13 +751,13 @@ function itemCard(x,hl=esc){
     ${machine?`<div class="small">${ic("Keg")} <b>Machine</b>: ${esc(machine.get)} · makes ${machine.goods.map(gd=>esc(gd[0])).join(", ")}</div>`:""}
     ${goods.map(z=>`<div class="small">${ic("Preserves Jar")} <b>Made in a ${esc(z.m.n)}</b> from ${esc(z.gd[1])} · ${esc(z.gd[2])} · ${esc(z.gd[3])}</div>`).join("")}
     ${crop?`<div class="small">${ic("Wheat")} <b>Crop</b>: ${seasonPills(crop.s)} ${crop.days} days${crop.re?`, regrows every ${crop.re}d`:""}${crop.seed!=null?` · seed ${g(crop.seed)}`:""}${crop.note?`<div class="muted">${esc(crop.note)}</div>`:""}</div>`:""}
-    ${fish?`<div class="small">${ic("Bamboo Pole")} <b>Fish</b>: ${esc(fish.loc)} · ${seasonPills(fish.s)} · ${esc(fish.t)}${fish.w!=="any"?` · ${fish.w==="rain"?IC.rain()+" rain":IC.sun()+" sun"} only`:""} ${st.fish[fish.n]?pill("Caught ✓","ok"):""}</div>`:""}
+    ${fish?`<div class="small">${fishByIcon(fish)} <b>Fish</b>: ${esc(fish.loc)}${fish.spot?` (${esc(fish.spot)})`:""} · Caught with: ${fishBy(fish)} · ${seasonPills(fish.s)} · ${esc(fish.t)}${fish.w!=="any"?` · ${fish.w==="rain"?IC.rain()+" rain":IC.sun()+" sun"} only`:""} ${st.fish[fish.n]?pill("Caught ✓","ok"):""}</div>`:""}
     ${uni?`<div class="small">${emo("love","sm")} <b>Universal love</b>: almost everyone loves this.</div>`:""}
-    ${people(emo("love","sm")+" <b>Loved by</b>",loves,"love")}
-    ${people(emo("like","sm")+" <b>Liked by</b>",likes,"like")}
-    ${people(emo("dislike","sm")+" <b>Disliked by</b>",dislikes,"dislike")}
-    ${people(emo("hate","sm")+" <b>Hated by</b>",hates,"hate")}
-    ${bund.length?`<div class="small">${ic("Bundle Green")} <b>Bundles</b>: ${bund.map(b=>`<span class="pill ok item" data-gobundle="${esc(b.room)}">${esc(b.room)} → ${esc(b.n)}</span>`).join("")}</div>`:""}
+    ${people(emo("love","sm")+" <b>Love:</b>",loves,"love")}
+    ${people(emo("like","sm")+" <b>Like:</b>",likes,"like")}
+    ${people(emo("dislike","sm")+" <b>Dislike:</b>",dislikes,"dislike")}
+    ${people(emo("hate","sm")+" <b>Hate:</b>",hates,"hate")}
+    ${bund.length?`<div class="small">${ic("Bundle Green")} <b>Bundles</b>: ${bund.map(b=>`<span class="pill ok item" data-gobundle="${esc(b.room)}">${esc(b.room)} → ${esc(bundleName(b))}</span>`).join("")}</div>`:""}
   </div>`;
 }
 
@@ -951,9 +961,9 @@ function renderRails(){
   const bp=bundleProgress();
   L.innerHTML=plaque(`${SICON[season]} ${cap(season)} ${day} · Y${st.year}`,today.length?today.map(ev).join(""):`<p class="small muted">Nothing special today.</p>`,"calendar")
     +plaque("This Week",up.length?up.slice(0,6).map(ev).join(""):`<p class="small muted">Quiet week ahead.</p>`,"calendar")
-    +plaque("Community Center",`<div class="bar" title="${bp.done} of ${bp.total} items donated"><i style="width:${(bp.done/bp.total*100).toFixed(1)}%"></i></div><div class="rail-cc"><b>${bp.bundlesDone}</b> / ${BUNDLES.length} bundles</div>${roomsInProgress()}`,"bundles");
+    +plaque("Community Center",jojaRoute()?`<p class="small muted">Joja route: bundles aren't used.</p>`:`<div class="bar" title="${bp.done} of ${bp.total} items donated"><i style="width:${(bp.done/bp.total*100).toFixed(1)}%"></i></div><div class="rail-cc"><b>${bp.bundlesDone}</b> / ${BUNDLES.length} bundles</div>${roomsInProgress()}`,"bundles");
   const plant=CROPS.filter(c=>c.s.includes(season)&&c.seed!=null&&!cropLock(c,day)).map(c=>({c,...cropCalc(c,season,day)})).filter(x=>x.profit>0).sort((a,b)=>b.gpd-a.gpd).slice(0,4);
-  const allFish=FISH.filter(f=>f.s.includes(season)&&!st.fish[f.n]&&unlocked(f));
+  const allFish=FISH.filter(f=>f.s.includes(season)&&!st.fish[f.n]&&unlocked(f)&&f.by!=="pot");
   R.innerHTML=plaque("Plant today",plant.length?plant.map(x=>`<div class="rail-row" data-search="${esc(cropName(x.c))}">${img(cropName(x.c))}<span class="rail-crop">${esc(cropName(x.c))}<small title="Days to grow${x.c.re?", then days between harvests":""}">${cropDays(x.c)}d grow${x.c.waterDays&&ui.riceWater?" · near water":""}${x.c.re?` · regrows ${x.c.re}d`:""}</small></span><div class="rail-money"><b title="Profit if planted today">${g(Math.round(x.profit))}</b><small title="Gold per day">${x.gpd.toFixed(1)}g/day</small></div></div>`).join(""):`<p class="small muted">Nothing worth planting now.</p>`,"crops")
     +plaque("Biting now",allFish.length?`<div class="rail-fish">${allFish.map(f=>`<span data-search="${esc(f.n)}" title="${esc(f.n)}: ${esc(f.loc)}">${img(f.n)}</span>`).join("")}</div>`:`<p class="small muted">All caught this season!</p>`,"fish");
   coinify(R);
