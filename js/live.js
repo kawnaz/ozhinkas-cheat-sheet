@@ -16,7 +16,9 @@ const liveFriend=name=>{if(!st.farmCode||!live.snap)return undefined;const f=liv
 const liveAvatar=f=>{const a=f&&f.avatar;return typeof a==="string"&&a.length<400000&&/^data:image\/(png|gif|webp);base64,[A-Za-z0-9+\/=]+$/.test(a)?a:null;};
 // a farmer's face as HTML: their avatar, or the cat/dog placeholder
 const farmerFace=(f,cls="")=>{const a=liveAvatar(f);return a?`<span class="pchar pchar-av ${cls}" style="background-image:url(&quot;${a}&quot;)"></span>`:`<span class="pchar pchar-${st.char==="dog"?"dog":"cat"} ${cls}"></span>`;};
-const liveFarmer=s=>s.farmers.find(f=>f.id===st.farmerId)||s.farmers.find(f=>f.isHost)||s.farmers[0];
+// farmers with a name (an unclaimed cabin's farmhand comes with an empty name and is left out)
+const liveFarmers=s=>{const l=s.farmers.filter(f=>String(f.name||"").trim());return l.length?l:s.farmers;};
+const liveFarmer=s=>{const l=liveFarmers(s);return l.find(f=>f.id===st.farmerId)||l.find(f=>f.isHost)||l[0];};
 
 function applyLive(s){
   st.season=s.date.season;st.day=s.date.day;st.year=s.date.year;
@@ -83,7 +85,7 @@ $("charBox").onclick=e=>{e.stopPropagation();if(st.farmCode&&live.snap)charPop()
 function charPop(open){
   let p=$("charPop");const was=!!p;
   if(open===false||was){if(p)p.remove();$("charBox").setAttribute("aria-expanded","false");if(was||open===false)return;}
-  const s=live.snap,cur=liveFarmer(s),others=s.farmers.filter(f=>f!==cur);
+  const s=live.snap,cur=liveFarmer(s),others=liveFarmers(s).filter(f=>f!==cur);
   p=document.createElement("div");p.id="charPop";p.className="char-pop";p.setAttribute("role","menu");
   p.innerHTML=(others.length?others.map(f=>`<button type="button" role="menuitem" class="cp-item" data-farmer="${esc(f.id)}">${farmerFace(f)}<span class="cp-name">${esc(f.name)}${f.isHost?' <i class="cp-host">host</i>':""}</span></button>`).join("")
     :`<p class="cp-none">Only ${esc(cur.name)} on this farm.</p>`)
@@ -118,8 +120,8 @@ function farmMenu(){
     else if(live.error)h+=`<p class="small" style="color:var(--love)">Couldn't reach the farm server right now (${esc(live.error)}). It tries again by itself.</p>`;
     if(s){
       h+=`<p><b>${esc(s.farmName)} Farm</b> · ${cap(s.date.season)} ${s.date.day}, Year ${s.date.year}<br><span class="small muted">Last upload: ${new Date(live.updatedAt).toLocaleString()}</span></p>`;
-      if(s.farmers.length>1)h+=`<p class="small farm-who">${farmerFace(liveFarmer(s))}Showing: <select id="farmWho">${s.farmers.map(f=>`<option value="${esc(f.id)}" ${f===liveFarmer(s)?"selected":""}>${esc(f.name)}${f.isHost?" (host)":""}</option>`).join("")}</select></p>`;
-      else h+=`<p class="small farm-who">${farmerFace(s.farmers[0])}Farmer: <b>${esc(s.farmers[0]?.name||"?")}</b></p>`;
+      if(liveFarmers(s).length>1)h+=`<p class="small farm-who">${farmerFace(liveFarmer(s))}Showing: <select id="farmWho">${liveFarmers(s).map(f=>`<option value="${esc(f.id)}" ${f===liveFarmer(s)?"selected":""}>${esc(f.name)}${f.isHost?" (host)":""}</option>`).join("")}</select></p>`;
+      else h+=`<p class="small farm-who">${farmerFace(liveFarmer(s))}Farmer: <b>${esc(liveFarmer(s)?.name||"?")}</b></p>`;
     }else if(!live.error)h+=`<p class="small muted">Loading…</p>`;
     h+=`<p class="small muted">Farm code: ${esc(st.farmCode)}.${live.missing?"":" While connected, the date, fish, bundles and spouse come from the game and update after each in-game night."}</p>
     <div class="toolbar"><button class="iconbtn" id="farmRefresh">Refresh now</button><button class="iconbtn" id="farmSave">${ic("Chest")} Save &amp; share</button><button class="iconbtn" id="farmOff" style="color:var(--love)">Disconnect</button></div>`;

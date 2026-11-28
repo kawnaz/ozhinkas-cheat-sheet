@@ -1416,7 +1416,8 @@ header .today .datebox #dateBtn{height:100%}
 
 /* the farmer's own picture from the game (mod sends farmers[i].avatar: 32x72 standing sprite, 8px headroom for hats).
    Small square slots (header, drop-down) show head and shoulders: scaled up, cropped from the top, crisp pixels. */
-.pchar-av{background-size:130% auto;background-position:50% 8%;image-rendering:pixelated}
+/* crop = image x 1-31, y 17-47 (hair top to shoulders, eyes just above the middle): 30 of 32 px wide -> 106.7%; y offset 17 of (72-30) -> 40.5% */
+.pchar-av{background-size:106.7% auto;background-position:50% 40.5%;image-rendering:pixelated}
 .farm-who{display:flex;align-items:center;gap:8px}
 .farm-who .pchar{width:32px;height:32px}
 /* the farm box has room: the whole farmer at 1:1 */
